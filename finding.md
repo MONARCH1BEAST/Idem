@@ -5,6 +5,16 @@
 **Auditor:** AI-assisted holistic audit
 **Overall verdict:** NOT-READY
 
+
+## Verification hardening — 2026-10-14
+
+- 26 deterministic cases per run (3 semantic from LLM + 23 stress)
+- 26/26 passed on the hero sample (loanint)
+- Per-case stderr and reason fields on CaseResult
+- Strict rules: exit code 0, stderr captured, timeout as distinct failure,
+  passed + failed == len(results)
+- Cache works offline: second run under 8 seconds
+
 ## 1. Executive summary
 
 This repository is not in a pitch-ready state. The core verification requirement is effectively broken because the verification harness is a placeholder, and the project is missing required setup and demo artifacts that the specification calls for. The package layout is inconsistent and tests only pass when run from the wrong directory, which makes a clean-machine setup unreliable. The biggest risk is that the team can neither prove correctness end to end nor reproduce the project from a standard checkout without manual workaround.
