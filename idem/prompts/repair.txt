@@ -1,0 +1,22 @@
+The generated Java does not match the COBOL output for one or more test cases.
+
+COBOL program:
+---
+{COBOL_SOURCE}
+---
+
+Current Java:
+---
+{JAVA_SOURCE}
+---
+
+Mismatches:
+---
+{DIFF_JSON}
+---
+
+Return a JSON object with:
+- "java_source": the corrected Java source (single class `Main`, same I/O
+  contract and arithmetic rules as before).
+- "test_cases": the same list as before, unchanged.
+- "notes": a list of strings explaining what you changed and why.

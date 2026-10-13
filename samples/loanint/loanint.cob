@@ -1,0 +1,19 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. LOANINT.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 WS-PRINCIPAL     PIC 9(7)V99.
+       01 WS-RATE          PIC 9(2)V99.
+       01 WS-TERM          PIC 9(3).
+       01 WS-INTEREST      PIC 9(7)V99.
+       01 WS-TOTAL         PIC 9(7)V99.
+       PROCEDURE DIVISION.
+           ACCEPT WS-PRINCIPAL.
+           ACCEPT WS-RATE.
+           ACCEPT WS-TERM.
+           COMPUTE WS-INTEREST ROUNDED =
+               WS-PRINCIPAL * WS-RATE / 100 * WS-TERM / 12.
+           COMPUTE WS-TOTAL = WS-PRINCIPAL + WS-INTEREST.
+           DISPLAY "INTEREST=" WS-INTEREST.
+           DISPLAY "TOTAL=" WS-TOTAL.
+           STOP RUN.

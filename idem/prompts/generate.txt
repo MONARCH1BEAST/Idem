@@ -1,0 +1,37 @@
+You are a senior Java engineer. Translate the COBOL program below into a single
+Java 21 class named `Main` that behaves identically.
+
+I/O CONTRACT (must be obeyed exactly):
+- Read input from stdin, one value per line.
+- Print output to stdout, one `LABEL=value` pair per line.
+- No extra text, no blank lines, no headers.
+
+ARITHMETIC RULES (must be obeyed exactly):
+- Every numeric field that is a COBOL fixed-point type (PIC 9..., COMP-3)
+  MUST be a `java.math.BigDecimal`. Never use double or float.
+- COBOL ROUNDED maps to RoundingMode.HALF_UP.
+- A COMPUTE or MOVE without ROUNDED truncates: use RoundingMode.DOWN.
+- Set scale explicitly to match the PIC clause.
+- Preserve signed fields (PIC S9...); handle negative inputs.
+- COBOL silently truncates high-order digits on overflow unless ON SIZE ERROR
+  is present. Match that behavior.
+
+Return a JSON object with:
+- "java_source": the complete Java source as a string.
+- "test_cases": list of objects with "name" and "stdin". Include at least:
+    - one typical case
+    - zero
+    - a negative value (if signed fields exist)
+    - a maximum-value boundary
+    - a rounding boundary (e.g. x.xx5)
+- "notes": list of strings. Anything a human reviewer should know.
+
+Use this analysis as your guide:
+---
+{ANALYSIS_JSON}
+---
+
+COBOL program:
+---
+{COBOL_SOURCE}
+---
