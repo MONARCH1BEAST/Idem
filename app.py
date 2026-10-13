@@ -1,163 +1,294 @@
+"""Idem — Streamlit UI.
+
+Run with:
+    streamlit run app.py
+
+Flow:
+    analyze -> generate -> verify -> (optional repair)
+
+By default, LLM calls are served from cache (samples/cached/). The demo is
+fast and offline-capable. Tick "Regenerate" to force fresh LLM calls.
+
+Verification always runs live: it compiles the COBOL with cobc, compiles
+the generated Java with javac, and compares stdout byte-for-byte.
+"""
+
 from pathlib import Path
 
 import streamlit as st
 
 from idem.analyze import analyze
 from idem.generate import generate
+from idem.repair import repair
+from idem.testcases import generate_stress_cases
+from idem.verify import verify
 
-st.set_page_config(page_title="Idem", layout="wide")
+
+# ----------------------------------------------------------------- config
+
+st.set_page_config(page_title="Idem", page_icon="✓", layout="wide")
+
+SAMPLES: dict[str, Path] = {
+    "loanint": Path("samples/loanint/loanint.cob"),
+}
+
+
+# ----------------------------------------------------------------- state
+
+if "result" not in st.session_state:
+    st.session_state.result = None
+
+
+# ----------------------------------------------------------------- header
 
 st.title("Idem")
 st.caption("Modernize legacy code. Prove it still works.")
 
-SAMPLES = {
-    "loanint": Path("samples/loanint/loanint.cob"),
-    "latefee": Path("samples/latefee/latefee.cob"),
-}
+
+# ----------------------------------------------------------------- sidebar
 
 with st.sidebar:
     st.header("Run")
-    sample_name = st.selectbox("Sample", list(SAMPLES.keys()))
-    regenerate = st.checkbox("Regenerate (ignore cache)", value=False)
-    run_clicked = st.button("Run pipeline", type="primary")
+    sample_name = st.selectbox("Sample program", list(SAMPLES.keys()))
+    regenerate = st.checkbox(
+        "Regenerate (ignore cache)",
+        value=False,
+        help="Off by default. The demo runs from cache for speed and offline use.",
+    )
+    run_clicked = st.button(
+        "▶  Run pipeline", type="primary", use_container_width=True
+    )
+
+    st.divider()
+    st.markdown(
+        "**Pipeline**\n\n"
+        "1. Analyze COBOL\n"
+        "2. Generate Java\n"
+        "3. Verify side-by-side\n"
+        "4. Repair once if needed\n\n"
+        "**Verification**\n\n"
+        "Compiles COBOL with `cobc`, Java with `javac`, runs both on the same "
+        "stdin, compares stdout byte-for-byte."
+    )
 
 
-def _init_state():
-    for k in ("analysis", "generation", "report", "error"):
-        if k not in st.session_state:
-            st.session_state[k] = None
+# ----------------------------------------------------------------- run
 
+def _run_pipeline(sample_path: Path, regenerate: bool) -> dict | None:
+    """Run analyze -> generate -> verify -> repair. Return a result dict."""
+    if not sample_path.exists():
+        st.error(f"Sample not found: `{sample_path}`")
+        return None
 
-_init_state()
+    cobol = sample_path.read_text(encoding="utf-8")
+
+    with st.status("Running pipeline…", expanded=True) as status:
+        st.write("**1 / 4**  Analyzing COBOL…")
+        analysis, err = analyze(cobol, regenerate=regenerate)
+        if err:
+            status.update(label="Analyze failed", state="error")
+            st.error(f"**analyze:** {err}")
+            return None
+
+        st.write("**2 / 4**  Generating Java…")
+        generation, err = generate(cobol, analysis, regenerate=regenerate)
+        if err:
+            status.update(label="Generate failed", state="error")
+            st.error(f"**generate:** {err}")
+            return None
+
+        stress = generate_stress_cases(sample_path.stem)
+        all_cases = list(generation.test_cases) + stress
+        st.write(
+            f"**3 / 4**  Verifying {len(all_cases)} cases "
+            f"({len(generation.test_cases)} semantic + {len(stress)} stress)…"
+        )
+        report = verify(cobol, generation.java_source, all_cases)
+
+        if report.failed > 0:
+            st.write(f"**4 / 4**  {report.failed} mismatch(es) — attempting repair…")
+            repaired, rerr = repair(
+                cobol,
+                generation.java_source,
+                all_cases,
+                report,
+                regenerate=regenerate,
+            )
+            if rerr:
+                st.warning(f"Repair failed: {rerr}")
+            elif repaired:
+                generation = repaired
+                st.write("Re-verifying after repair…")
+                report = verify(cobol, repaired.java_source, all_cases)
+
+        status.update(
+            label=f"Done — {report.passed} / {len(report.results)} passed",
+            state="complete",
+        )
+
+    return {
+        "analysis": analysis,
+        "generation": generation,
+        "report": report,
+        "all_cases": all_cases,
+    }
 
 
 if run_clicked:
-    path = SAMPLES[sample_name]
-    if not path.exists():
-        st.error(f"Sample not found: {path}")
-    else:
-        cobol = path.read_text(encoding="utf-8")
-
-        st.session_state.analysis = None
-        st.session_state.generation = None
-        st.session_state.report = None
-        st.session_state.error = None
-
-        with st.spinner("Analyzing..."):
-            analysis, err = analyze(cobol, regenerate=regenerate)
-        if err:
-            st.session_state.error = f"analyze: {err}"
-        else:
-            st.session_state.analysis = analysis
-
-            with st.spinner("Generating Java..."):
-                generation, err = generate(cobol, analysis, regenerate=regenerate)
-            if err:
-                st.session_state.error = f"generate: {err}"
-            else:
-                st.session_state.generation = generation
-
-                try:
-                    from idem.verify import verify
-                    with st.spinner("Verifying..."):
-                        st.session_state.report = verify(
-                            cobol,
-                            generation.java_source,
-                            generation.test_cases,
-                        )
-                except ImportError:
-                    st.session_state.report = None
+    st.session_state.result = _run_pipeline(SAMPLES[sample_name], regenerate)
 
 
-if st.session_state.error:
-    st.error(st.session_state.error)
+# ----------------------------------------------------------------- tabs
 
-tab_explain, tab_rules, tab_java, tab_tests, tab_verify = st.tabs(
+result = st.session_state.result
+
+tab_exp, tab_rules, tab_java, tab_tests, tab_verify = st.tabs(
     ["Explanation", "Rules", "Java", "Tests", "Verification"]
 )
 
-analysis = st.session_state.analysis
-generation = st.session_state.generation
-report = st.session_state.report
 
-with tab_explain:
-    if not analysis:
-        st.info("Run the pipeline to see the explanation.")
+# --- Explanation ----------------------------------------------------------
+
+with tab_exp:
+    if not result:
+        st.info("Click **▶ Run pipeline** in the sidebar to start.")
     else:
+        a = result["analysis"]
         st.subheader("Summary")
-        st.write(analysis.summary)
+        st.write(a.summary)
+
         col1, col2 = st.columns(2)
         with col1:
             st.subheader("Inputs")
-            for i in analysis.inputs:
-                st.write(f"- {i}")
+            for i in a.inputs:
+                st.markdown(f"- {i}")
         with col2:
             st.subheader("Outputs")
-            for o in analysis.outputs:
-                st.write(f"- {o}")
-        if analysis.risks:
+            for o in a.outputs:
+                st.markdown(f"- {o}")
+
+        if a.risks:
             st.subheader("Risks")
-            for r in analysis.risks:
+            for r in a.risks:
                 st.warning(r)
 
+
+# --- Rules ----------------------------------------------------------------
+
 with tab_rules:
-    if not analysis:
-        st.info("Run the pipeline to see the business rules.")
+    if not result:
+        st.info("Click **▶ Run pipeline** in the sidebar to start.")
     else:
-        st.table([
-            {
-                "ID": r.id,
-                "Description": r.description,
-                "Lines": r.cobol_lines,
-                "Confidence": f"{r.confidence:.2f}",
-            }
-            for r in analysis.business_rules
-        ])
+        rules = result["analysis"].business_rules
+        if not rules:
+            st.write("No business rules extracted.")
+        else:
+            st.dataframe(
+                [
+                    {
+                        "ID": r.id,
+                        "Description": r.description,
+                        "COBOL lines": r.cobol_lines,
+                        "Confidence": round(r.confidence, 2),
+                    }
+                    for r in rules
+                ],
+                use_container_width=True,
+                hide_index=True,
+            )
+
+
+# --- Java -----------------------------------------------------------------
 
 with tab_java:
-    if not generation:
-        st.info("Run the pipeline to see the generated Java.")
+    if not result:
+        st.info("Click **▶ Run pipeline** in the sidebar to start.")
     else:
-        st.code(generation.java_source, language="java")
-        if generation.notes:
+        g = result["generation"]
+        st.code(g.java_source, language="java")
+        if g.notes:
             st.subheader("Notes")
-            for n in generation.notes:
-                st.write(f"- {n}")
+            for n in g.notes:
+                st.markdown(f"- {n}")
+
+
+# --- Tests ----------------------------------------------------------------
 
 with tab_tests:
-    if not generation:
-        st.info("Run the pipeline to see the test cases.")
+    if not result:
+        st.info("Click **▶ Run pipeline** in the sidebar to start.")
     else:
-        for tc in generation.test_cases:
+        all_cases = result["all_cases"]
+        n_semantic = len(result["generation"].test_cases)
+        n_stress = len(all_cases) - n_semantic
+        st.caption(
+            f"{n_semantic} semantic (LLM-generated) + "
+            f"{n_stress} stress (deterministic) = "
+            f"{len(all_cases)} total"
+        )
+        for tc in all_cases:
             with st.expander(tc.name):
                 st.code(tc.stdin, language="text")
 
+
+# --- Verification ---------------------------------------------------------
+
 with tab_verify:
-    if not report:
-        st.info("Verification not available yet (verify.py missing or not run).")
+    if not result:
+        st.info("Click **▶ Run pipeline** in the sidebar to start.")
     else:
-        st.subheader(f"{report.passed} / {len(report.results)} passed")
-        for result in report.results:
-            with st.container():
-                status_col, name_col = st.columns([1, 5])
-                with status_col:
-                    if result.match:
-                        st.success("✅ Match")
-                    else:
-                        st.error("❌ Mismatch")
-                with name_col:
-                    st.subheader(result.name)
+        report = result["report"]
+        all_cases = result["all_cases"]
+        stdin_by_name = {tc.name: tc.stdin for tc in all_cases}
+        total = len(report.results)
 
-                cobol_col, java_col = st.columns(2)
-                with cobol_col:
-                    st.markdown("**COBOL stdout**")
-                    st.code(result.cobol_output or "(empty)", language="text")
-                with java_col:
-                    st.markdown("**Java stdout**")
-                    st.code(result.java_output or "(empty)", language="text")
+        if report.failed == 0:
+            st.success(f"###  ✓  {report.passed} / {total} passed")
+        else:
+            st.error(
+                f"###  {report.passed} / {total} passed  —  {report.failed} failed"
+            )
 
-                if result.reason:
-                    st.warning(f"Reason: {result.reason}")
-                if result.stderr:
-                    with st.expander("stderr"):
-                        st.code(result.stderr, language="text")
+        st.caption(
+            "Each case runs the original COBOL and the generated Java on the "
+            "same stdin. Stdout must match byte-for-byte."
+        )
+
+        # Compact summary table
+        st.dataframe(
+            [
+                {
+                    "Case": c.name,
+                    "stdin": stdin_by_name.get(c.name, "").strip().replace("\n", " · "),
+                    "Match": "✓" if c.match else "✗",
+                    "Reason": c.reason or "",
+                }
+                for c in report.results
+            ],
+            use_container_width=True,
+            hide_index=True,
+        )
+
+        # Side-by-side detail per case
+        st.subheader("Case details")
+        expand_all = st.checkbox("Expand all outputs", value=False)
+
+        for c in report.results:
+            icon = "✓" if c.match else "✗"
+            label = f"{icon}  {c.name}"
+            with st.expander(label, expanded=expand_all or not c.match):
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.caption("COBOL output")
+                    st.code(c.cobol_output, language="text")
+                with col2:
+                    st.caption("Java output")
+                    st.code(c.java_output, language="text")
+
+                stdin = stdin_by_name.get(c.name, "")
+                st.caption("stdin:  `" + stdin.strip().replace("\n", " | ") + "`")
+
+                if c.stderr:
+                    st.caption(f"stderr: {c.stderr}")
+                if not c.match and c.reason:
+                    st.error(f"Reason: {c.reason}")

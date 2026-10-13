@@ -4,20 +4,26 @@ Read the COBOL program below and return a JSON object with these fields:
 
 - "summary": 2-4 sentences in plain English. What does this program do?
 - "inputs": list of input field names, in the order the program reads them.
-- "outputs": list of output labels, exactly as the program prints them.
+- "outputs": list of output LABELS only, without the "=" character.
+  Example: if the COBOL prints DISPLAY "INTEREST=" WS-INTEREST,
+  the label is "INTEREST" (not "INTEREST=").
 - "business_rules": list of objects, each with:
     - "id": "R1", "R2", ...
     - "description": one plain-English sentence.
     - "cobol_lines": the line range, e.g. "42-48".
     - "confidence": float 0.0-1.0.
-- "risks": list of strings. Flag any of:
-    - COMP-3 packed decimal fields
-    - implicit rounding (COMPUTE or MOVE without ROUNDED)
-    - signed fields (PIC S9...)
-    - potential overflow (missing ON SIZE ERROR)
-    - any construct whose Java equivalent is non-obvious
-        - exact PIC clauses for every displayed numeric output, using one entry per
-            output in this format: "Output PIC: LABEL=PIC 9(7)V99".
+- "risks": list of strings. ONLY include a risk if you can quote the exact
+  COBOL line that causes it. Each risk must include the line number.
+  Valid risks are:
+    - "COMP-3 usage at line N" — ONLY if the source contains "COMP-3"
+    - "Implicit rounding at line N" — ONLY if a COMPUTE or MOVE lacks ROUNDED
+    - "Signed field at line N" — ONLY if the source contains "PIC S9"
+    - "Missing ON SIZE ERROR at line N" — ONLY if a COMPUTE lacks ON SIZE ERROR
+    - "Division without ROUNDED at line N" — ONLY if a divide lacks ROUNDED
+
+  If a category does not apply to this specific program, DO NOT list it.
+  An empty list is a valid and correct answer.
+  Do not list a risk that you cannot tie to a specific line number.
 
 Rules:
 - Do not invent behavior. If something is ambiguous, say so in "risks".
