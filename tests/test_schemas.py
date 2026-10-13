@@ -1,4 +1,31 @@
-from idem.schemas import AnalysisResult, BusinessRule, GenerationResult, TestCase
+import pytest
+from pydantic import ValidationError
+
+from idem.schemas import (
+    AnalysisResult,
+    BusinessRule,
+    CaseResult,
+    GenerationResult,
+    TestCase,
+    VerificationReport,
+)
+
+RULE = {
+    "id": "R1",
+    "description": "Interest is principal times rate times term.",
+    "cobol_lines": "42-48",
+    "confidence": 0.9,
+}
+
+
+def test_business_rule_and_confidence_bounds():
+    rule = BusinessRule(**RULE)
+    assert rule.id == "R1"
+    assert rule.cobol_lines == "42-48"
+    assert rule.confidence == 0.9
+    for invalid_confidence in (-0.1, 1.1):
+        with pytest.raises(ValidationError):
+            BusinessRule(**{**RULE, "confidence": invalid_confidence})
 
 
 def test_analysis_result_roundtrip():
@@ -21,3 +48,9 @@ def test_generation_result_roundtrip():
         notes=[],
     )
     assert GenerationResult.model_validate(g.model_dump()).test_cases[0].name == "t1"
+
+
+def test_verification_models():
+    result = CaseResult(name="typical", cobol_output="X=1", java_output="X=1", match=True)
+    report = VerificationReport(results=[result], passed=1, failed=0)
+    assert report.passed + report.failed == len(report.results)
