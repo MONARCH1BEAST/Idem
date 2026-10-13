@@ -4,6 +4,7 @@ from pathlib import Path
 from idem.analyze import analyze
 from idem.generate import generate
 from idem.repair import repair
+from idem.testcases import generate_stress_cases
 
 
 def run_pipeline(cobol_path: Path, regenerate: bool = False) -> dict:
@@ -22,18 +23,25 @@ def run_pipeline(cobol_path: Path, regenerate: bool = False) -> dict:
     print("[3/3] verify...", file=sys.stderr)
     try:
         from idem.verify import verify
-        report = verify(cobol, generation.java_source, generation.test_cases)
+        stress = generate_stress_cases("loanint")
+        all_cases = list(generation.test_cases) + stress
+        print(
+            f"  {len(generation.test_cases)} semantic + {len(stress)} stress = "
+            f"{len(all_cases)} cases",
+            file=sys.stderr,
+        )
+        report = verify(cobol, generation.java_source, all_cases)
         repaired_once = False
         if report.failed > 0 and not repaired_once:
             print("[4/4] repair...", file=sys.stderr)
             repaired, err = repair(
                 cobol,
                 generation.java_source,
-                generation.test_cases,
+                all_cases,
                 report,
             )
             if repaired:
-                report = verify(cobol, repaired.java_source, repaired.test_cases)
+                report = verify(cobol, repaired.java_source, all_cases)
                 generation = repaired
             elif err:
                 print(f"  repair failed: {err}", file=sys.stderr)

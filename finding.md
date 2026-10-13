@@ -59,6 +59,26 @@ Remaining P1:
 
 **Resolution note (2026-10-13):** Deleted the nested duplicate package and stale backup, retained root environment/dependency files, moved pytest configuration and consolidated tests to the repository root, and replaced the client with the local Ollama version.
 
+## Verification hardening — 2026-10-13
+
+- The CLI pipeline adds deterministic, seeded stress cases to generated
+  semantic cases. The final cache-cleared loanint run used 3 semantic + 23
+  stress cases (26 total); verification passed 12/26 after repair.
+- The stress generator produced 20 cases with 20 unique stdins when called
+  with `target_total=20`. The focused 20-case comparison used 3 semantic +
+  17 stress cases and passed 10/20, exposing additional mismatches.
+- Verification enforces these seven rules:
+  1. Compare stdout bytes after CRLF-to-LF normalization, trailing
+     whitespace removal per line, and trailing-newline removal only.
+  2. Nonzero exit codes cannot count as matches.
+  3. Captured stderr is stored in each case result, including an empty value.
+  4. Each subprocess has a 30-second timeout reported with a `TIMEOUT` reason.
+  5. Compilation and execution failures appear as failed case rows with reasons.
+  6. Assert that passed + failed equals the number of result rows.
+  7. Preserve case order and use seeded stress inputs for deterministic reports.
+- The Verification tab shows the summary and a visible per-case view with
+  COBOL and Java stdout, match status, reason, and stderr when present.
+
 ### [P2] Dependency configuration does not match the actual runtime contract
 
 **Evidence:** The root `requirements.txt` is missing the expected `httpx` dependency and is substantially lighter than the nested `idem/requirements.txt`. The project also has the wrong environment variable pattern for the actual provider model (`OLLAMA_*` instead of the required `LLM_PROVIDER` / `LLM_MODEL` pattern described in the spec).

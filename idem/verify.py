@@ -15,36 +15,91 @@ class VerificationError(RuntimeError):
     """A compiler or runtime could not execute a verification case."""
 
 
+class VerificationTimeout(VerificationError):
+    def __init__(self, message: str, stdout: bytes, stderr: bytes):
+        super().__init__(message)
+        self.stdout = stdout
+        self.stderr = stderr
+
+
 def _run(
     command: list[str],
     *,
     input_text: str | None = None,
     env: dict[str, str] | None = None,
-) -> subprocess.CompletedProcess[str]:
+) -> subprocess.CompletedProcess[bytes]:
     try:
         return subprocess.run(
             command,
-            input=input_text,
+            input=input_text.encode("utf-8") if input_text is not None else None,
             capture_output=True,
-            text=True,
+            text=False,
             check=False,
             timeout=30,
             env=env,
         )
-    except (OSError, subprocess.TimeoutExpired) as exc:
+    except subprocess.TimeoutExpired as exc:
+        stdout = exc.stdout or b""
+        stderr = exc.stderr or b""
+        if isinstance(stdout, str):
+            stdout = stdout.encode("utf-8")
+        if isinstance(stderr, str):
+            stderr = stderr.encode("utf-8")
+        raise VerificationTimeout(
+            f"TIMEOUT after {exc.timeout} seconds: {' '.join(command)}",
+            stdout,
+            stderr,
+        ) from exc
+    except OSError as exc:
         raise VerificationError(f"Command failed: {' '.join(command)}\n{exc}") from exc
 
 
-def _require_success(stage: str, result: subprocess.CompletedProcess[str]) -> None:
+def _decode(output: bytes) -> str:
+    return output.decode("utf-8", errors="replace")
+
+
+def _require_success(stage: str, result: subprocess.CompletedProcess[bytes]) -> None:
     if result.returncode != 0:
         raise VerificationError(
             f"{stage} failed (exit {result.returncode})\n"
-            f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+            f"stdout:\n{_decode(result.stdout)}\nstderr:\n{_decode(result.stderr)}"
         )
 
 
-def _normalize(output: str) -> str:
-    return "\n".join(line.rstrip() for line in output.splitlines()).rstrip("\n")
+def _normalize(output: bytes) -> bytes:
+    output = output.replace(b"\r\n", b"\n")
+    return b"\n".join(line.rstrip() for line in output.split(b"\n")).rstrip(b"\n")
+
+
+def _failure_results(test_cases: list[TestCase], reason: str, stderr: str) -> list[CaseResult]:
+    return [
+        CaseResult(
+            name=test_case.name,
+            cobol_output="",
+            java_output="",
+            match=False,
+            stderr=stderr,
+            reason=reason,
+        )
+        for test_case in test_cases
+    ]
+
+
+def _execute_case(
+    command: list[str],
+    stdin: str,
+    label: str,
+    env: dict[str, str],
+) -> tuple[bytes, str, str]:
+    try:
+        result = _run(command, input_text=stdin, env=env)
+    except VerificationTimeout as exc:
+        return _normalize(exc.stdout), _decode(exc.stderr), f"TIMEOUT: {label} exceeded 30 seconds"
+    except VerificationError as exc:
+        return b"", str(exc), f"{label} execution error"
+
+    reason = "" if result.returncode == 0 else f"{label} exited with code {result.returncode}"
+    return _normalize(result.stdout), _decode(result.stderr), reason
 
 
 def _short_path(path: str) -> str:
@@ -127,30 +182,76 @@ def verify(cobol_src: str, java_src: str, test_cases: list[TestCase]) -> Verific
     """Compile both programs once, then compare their output for each input case."""
     java = shutil.which("java")
     if not java:
-        raise VerificationError("Required compiler/runtime not found on PATH: java")
+        results = _failure_results(
+            test_cases,
+            "COMPILATION ERROR",
+            "Required compiler/runtime not found on PATH: java",
+        )
+        return _verification_report(results)
 
     env = _compiler_environment()
     with tempfile.TemporaryDirectory(prefix="idem-verify-") as temporary_directory:
-        cobol_exe, java_dir = _compile(cobol_src, java_src, Path(temporary_directory), env)
+        try:
+            cobol_exe, java_dir = _compile(cobol_src, java_src, Path(temporary_directory), env)
+        except VerificationTimeout as exc:
+            diagnostic = _decode(exc.stderr) or str(exc)
+            results = _failure_results(
+                test_cases,
+                "TIMEOUT: compilation exceeded 30 seconds",
+                diagnostic.replace(temporary_directory, "<verification-temp>"),
+            )
+            return _verification_report(results)
+        except VerificationError as exc:
+            diagnostic = str(exc).replace(temporary_directory, "<verification-temp>")
+            results = _failure_results(test_cases, "COMPILATION ERROR", diagnostic)
+            return _verification_report(results)
+
         results = []
         for test_case in test_cases:
-            cobol_run = _run([str(cobol_exe)], input_text=test_case.stdin, env=env)
-            _require_success(f"COBOL execution for {test_case.name}", cobol_run)
-            java_run = _run([java, "-cp", str(java_dir), "Main"], input_text=test_case.stdin, env=env)
-            _require_success(f"Java execution for {test_case.name}", java_run)
-            cobol_output = _normalize(cobol_run.stdout)
-            java_output = _normalize(java_run.stdout)
+            cobol_bytes, cobol_stderr, cobol_reason = _execute_case(
+                [str(cobol_exe)],
+                test_case.stdin,
+                "COBOL",
+                env,
+            )
+            java_bytes, java_stderr, java_reason = _execute_case(
+                [java, "-cp", str(java_dir), "Main"],
+                test_case.stdin,
+                "Java",
+                env,
+            )
+            stderr = "\n".join(
+                f"{label} stderr:\n{output}"
+                for label, output in (("COBOL", cobol_stderr), ("Java", java_stderr))
+                if output
+            )
+            reasons = [reason for reason in (cobol_reason, java_reason) if reason]
+            match = not reasons and cobol_bytes == java_bytes
+            reason = "; ".join(reasons)
+            if not match and not reason:
+                reason = (
+                    f"stdout mismatch: cobol={len(cobol_bytes)}B "
+                    f"java={len(java_bytes)}B"
+                )
             results.append(
                 CaseResult(
                     name=test_case.name,
-                    cobol_output=cobol_output,
-                    java_output=java_output,
-                    match=cobol_output == java_output,
+                    cobol_output=_decode(cobol_bytes),
+                    java_output=_decode(java_bytes),
+                    match=match,
+                    stderr=stderr,
+                    reason=reason,
                 )
             )
 
+    return _verification_report(results)
+
+
+def _verification_report(results: list[CaseResult]) -> VerificationReport:
     passed = sum(result.match for result in results)
-    return VerificationReport(results=results, passed=passed, failed=len(results) - passed)
+    failed = len(results) - passed
+    assert passed + failed == len(results)
+    return VerificationReport(results=results, passed=passed, failed=failed)
 
 
 def _sample_sources(sample_path: Path) -> tuple[str, str]:

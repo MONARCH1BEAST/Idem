@@ -84,16 +84,17 @@ CRITICAL:
 - String.format with Locale.ROOT is the ONLY approved formatting method.
 
 TEST CASE CONSTRAINTS:
-- Generate at most 3 test cases.
+- Generate 3 to 5 test cases.
 - Each test case MUST have a unique stdin.
-- The computed outputs MUST fit within the PIC clauses. If a PIC is
-  9(7)V99, the total must stay below 9,999,999.99. Choose small inputs.
-- Required cases: one typical, one zero, one small rounding boundary.
-- For a rounding boundary, choose inputs where the third decimal digit
-  is 5 (e.g. results ending in .005) so HALF_UP vs DOWN matters. Keep
-  the values small enough that the total stays well under the PIC limit.
-- Do NOT generate a "maximum value" case. Overflow behavior is out of
-  scope for this tool.
+- The computed outputs MUST fit within the PIC clauses. For PIC
+  9(7)V99, the total must stay below 9,999,999.99.
+- Required cases: one typical, one zero, one rounding boundary.
+- Optional: one negative input (only if all output PICs are signed),
+  one very small (1 or 2), one near-maximum but safe.
+- Name each case descriptively (e.g. "Typical case", "Rounding
+  boundary at .xx5").
+- Do NOT generate a maximum value case that could overflow.
+- Do NOT generate more than 5 cases.
 
 Return a JSON object with:
 - "java_source": the complete Java source as a string.

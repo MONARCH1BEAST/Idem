@@ -137,12 +137,27 @@ with tab_verify:
         st.info("Verification not available yet (verify.py missing or not run).")
     else:
         st.subheader(f"{report.passed} / {len(report.results)} passed")
-        st.table([
-            {
-                "Case": r.name,
-                "Match": "✅" if r.match else "❌",
-                "COBOL": r.cobol_output,
-                "Java": r.java_output,
-            }
-            for r in report.results
-        ])
+        for result in report.results:
+            with st.container():
+                status_col, name_col = st.columns([1, 5])
+                with status_col:
+                    if result.match:
+                        st.success("✅ Match")
+                    else:
+                        st.error("❌ Mismatch")
+                with name_col:
+                    st.subheader(result.name)
+
+                cobol_col, java_col = st.columns(2)
+                with cobol_col:
+                    st.markdown("**COBOL stdout**")
+                    st.code(result.cobol_output or "(empty)", language="text")
+                with java_col:
+                    st.markdown("**Java stdout**")
+                    st.code(result.java_output or "(empty)", language="text")
+
+                if result.reason:
+                    st.warning(f"Reason: {result.reason}")
+                if result.stderr:
+                    with st.expander("stderr"):
+                        st.code(result.stderr, language="text")

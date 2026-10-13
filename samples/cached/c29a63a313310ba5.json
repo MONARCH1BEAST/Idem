@@ -4,7 +4,7 @@
   "model": "qwen2.5-coder:7b",
   "temperature": 0.0,
   "input_hash": "c68b0322af50fce5080a1f1c92c8cf2c149ada4fcb7eb38d438b1e0b5685453c",
-  "created_at": "2026-10-13T18:13:22Z",
+  "created_at": "2026-10-13T19:02:29Z",
   "raw_response": "{\n  \"summary\": \"This COBOL program calculates the interest and total amount for a loan based on the principal, rate, and term provided by the user.\",\n  \"inputs\": [\"WS-PRINCIPAL\", \"WS-RATE\", \"WS-TERM\"],\n  \"outputs\": [\"INTEREST=\", \"TOTAL=\"],\n  \"business_rules\": [\n    {\n      \"id\": \"R1\",\n      \"description\": \"The interest is calculated by multiplying the principal by the rate, dividing by 100, then by the term and finally by 12.\",\n      \"cobol_lines\": \"42-43\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"risks\": [\n    \"COMP-3 packed decimal fields\",\n    \"implicit rounding (COMPUTE without ROUNDED)\",\n    \"signed fields (PIC S9...)\"\n  ]\n}",
   "parsed": {
     "summary": "This COBOL program calculates the interest and total amount for a loan based on the principal, rate, and term provided by the user.",

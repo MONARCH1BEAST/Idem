@@ -32,6 +32,8 @@ class CaseResult(BaseModel):
     cobol_output: str
     java_output: str
     match: bool
+    stderr: str = ""
+    reason: str = ""
 
 
 class VerificationReport(BaseModel):
