@@ -30,11 +30,15 @@ This repository is not in a pitch-ready state. The core verification requirement
 
 ### [P0] Verification harness is a stub
 
+**Status:** RESOLVED (2026-10-13)
+
 **Evidence:** `idem/verify.py` contains a placeholder implementation that returns `CaseResult(..., match=False)` for every test case and `VerificationReport(results=..., passed=0, failed=len(results))` instead of invoking `cobc` and `javac` or comparing SSA output. This directly contradicts the project’s “core is verification” requirement.
 
 **Impact:** The finished product cannot prove that generated Java matches COBOL behavior. The core demo/pitch promise is therefore not met.
 
 **Recommendation:** Replace the placeholder with a real compiler-runner that compiles the COBOL and generated Java, executes both on the same stdin, and compares exact stdout output with a clear `VerificationReport`.
+
+**Resolution note:** [P0] Verification harness is a stub — Replaced the placeholder with compiler-backed COBOL/Java execution, exact normalized stdout comparison, a runnable sample CLI, and a compiler smoke test.
 
 ### [P1] Clean-machine setup is broken and documentation is missing
 

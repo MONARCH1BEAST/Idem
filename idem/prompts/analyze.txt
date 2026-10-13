@@ -16,6 +16,8 @@ Read the COBOL program below and return a JSON object with these fields:
     - signed fields (PIC S9...)
     - potential overflow (missing ON SIZE ERROR)
     - any construct whose Java equivalent is non-obvious
+        - exact PIC clauses for every displayed numeric output, using one entry per
+            output in this format: "Output PIC: LABEL=PIC 9(7)V99".
 
 Rules:
 - Do not invent behavior. If something is ambiguous, say so in "risks".

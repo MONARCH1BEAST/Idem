@@ -1,0 +1,31 @@
+{
+  "key": "89027edefcb1c520",
+  "prompt_name": "generate",
+  "model": "qwen2.5-coder:7b",
+  "temperature": 0.0,
+  "input_hash": "c715bbfb22d0e326849b2e55094d3dbfb9598653f4e79818dc566f950eab3a1e",
+  "created_at": "2026-10-13T18:13:36Z",
+  "raw_response": "{\n  \"java_source\": \"import java.io.BufferedReader;\\nimport java.io.InputStreamReader;\\nimport java.math.BigDecimal;\\nimport java.math.RoundingMode;\\nimport java.util.Locale;\\n\\npublic class Main {\\n    public static void main(String[] args) throws Exception {\\n        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));\\n        BigDecimal principal = new BigDecimal(reader.readLine().trim());\\n        BigDecimal rate = new BigDecimal(reader.readLine().trim());\\n        BigDecimal term = new BigDecimal(reader.readLine().trim());\\n\\n        BigDecimal numerator = principal.multiply(rate).multiply(term);\\n        BigDecimal denominator = new BigDecimal(\\\"1200\\\");\\n        BigDecimal interest = numerator.divide(denominator, 2, RoundingMode.HALF_UP);\\n        BigDecimal total = principal.add(interest);\\n\\n        String formattedInterest = String.format(Locale.ROOT, \\\"%010.2f\\\", interest.abs());\\n        String formattedTotal = String.format(Locale.ROOT, \\\"%010.2f\\\", total.abs());\\n\\n        System.out.println(\\\"INTEREST=\\\" + formattedInterest);\\n        System.out.println(\\\"TOTAL=\\\" + formattedTotal);\\n    }\\n}\",\n  \"test_cases\": [\n    {\n      \"name\": \"Typical case\",\n      \"stdin\": \"10000\\n5\\n12\\n\"\n    },\n    {\n      \"name\": \"Zero case\",\n      \"stdin\": \"0\\n0\\n0\\n\"\n    },\n    {\n      \"name\": \"Rounding boundary\",\n      \"stdin\": \"1000\\n5\\n12\\n\"\n    }\n  ],\n  \"notes\": [\n    \"The COBOL program calculates interest and total amount for a loan based on principal, rate, and term.\",\n    \"The Java program follows the same logic, using BigDecimal for arithmetic and String.format for output formatting.\",\n    \"Test cases cover typical, zero, and rounding boundary scenarios to ensure correctness.\"\n  ]\n}",
+  "parsed": {
+    "java_source": "import java.io.BufferedReader;\nimport java.io.InputStreamReader;\nimport java.math.BigDecimal;\nimport java.math.RoundingMode;\nimport java.util.Locale;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));\n        BigDecimal principal = new BigDecimal(reader.readLine().trim());\n        BigDecimal rate = new BigDecimal(reader.readLine().trim());\n        BigDecimal term = new BigDecimal(reader.readLine().trim());\n\n        BigDecimal numerator = principal.multiply(rate).multiply(term);\n        BigDecimal denominator = new BigDecimal(\"1200\");\n        BigDecimal interest = numerator.divide(denominator, 2, RoundingMode.HALF_UP);\n        BigDecimal total = principal.add(interest);\n\n        String formattedInterest = String.format(Locale.ROOT, \"%010.2f\", interest.abs());\n        String formattedTotal = String.format(Locale.ROOT, \"%010.2f\", total.abs());\n\n        System.out.println(\"INTEREST=\" + formattedInterest);\n        System.out.println(\"TOTAL=\" + formattedTotal);\n    }\n}",
+    "test_cases": [
+      {
+        "name": "Typical case",
+        "stdin": "10000\n5\n12\n"
+      },
+      {
+        "name": "Zero case",
+        "stdin": "0\n0\n0\n"
+      },
+      {
+        "name": "Rounding boundary",
+        "stdin": "1000\n5\n12\n"
+      }
+    ],
+    "notes": [
+      "The COBOL program calculates interest and total amount for a loan based on principal, rate, and term.",
+      "The Java program follows the same logic, using BigDecimal for arithmetic and String.format for output formatting.",
+      "Test cases cover typical, zero, and rounding boundary scenarios to ensure correctness."
+    ]
+  }
+}
