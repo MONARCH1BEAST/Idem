@@ -3,14 +3,12 @@
 Run with:
     streamlit run app.py
 
-Flow:
-    analyze -> generate -> verify -> (optional repair)
+Two modes:
+    - Sample: uses a curated program from samples/. Cached LLM output.
+    - Upload: user provides a .cob file. Fresh LLM call. Downloadable Java.
 
-By default, LLM calls are served from cache (samples/cached/). The demo is
-fast and offline-capable. Tick "Regenerate" to force fresh LLM calls.
-
-Verification always runs live: it compiles the COBOL with cobc, compiles
-the generated Java with javac, and compares stdout byte-for-byte.
+Verification always runs live: compiles COBOL with cobc, compiles the
+generated Java with javac, compares stdout byte-for-byte.
 """
 
 from pathlib import Path
@@ -37,6 +35,8 @@ SAMPLES: dict[str, Path] = {
 
 if "result" not in st.session_state:
     st.session_state.result = None
+if "upload_token" not in st.session_state:
+    st.session_state.upload_token = None
 
 
 # ----------------------------------------------------------------- header
@@ -49,14 +49,38 @@ st.caption("Modernize legacy code. Prove it still works.")
 
 with st.sidebar:
     st.header("Run")
-    sample_name = st.selectbox("Sample program", list(SAMPLES.keys()))
-    regenerate = st.checkbox(
-        "Regenerate (ignore cache)",
-        value=False,
-        help="Off by default. The demo runs from cache for speed and offline use.",
+
+    source_mode = st.radio(
+        "Source",
+        ["Sample", "Upload COBOL file"],
+        horizontal=False,
+        label_visibility="collapsed",
     )
+
+    uploaded_file = None
+    sample_name = None
+
+    if source_mode == "Sample":
+        sample_name = st.selectbox("Sample program", list(SAMPLES.keys()))
+        regenerate = st.checkbox(
+            "Regenerate (ignore cache)",
+            value=False,
+            help="Off by default. Demo runs from cache.",
+        )
+    else:
+        uploaded_file = st.file_uploader(
+            "Upload a COBOL source file",
+            type=["cob", "cbl", "cobol", "txt"],
+            help="One self-contained COBOL program. Reads stdin, writes stdout.",
+        )
+        regenerate = True
+        st.caption("Uploads always run live. Expect 1–3 minutes.")
+
     run_clicked = st.button(
-        "▶  Run pipeline", type="primary", use_container_width=True
+        "▶  Run pipeline",
+        type="primary",
+        use_container_width=True,
+        disabled=(source_mode == "Upload" and uploaded_file is None),
     )
 
     st.divider()
@@ -67,20 +91,19 @@ with st.sidebar:
         "3. Verify side-by-side\n"
         "4. Repair once if needed\n\n"
         "**Verification**\n\n"
-        "Compiles COBOL with `cobc`, Java with `javac`, runs both on the same "
-        "stdin, compares stdout byte-for-byte."
+        "Compiles COBOL with `cobc`, Java with `javac`, runs both on the "
+        "same stdin, compares stdout byte-for-byte."
     )
 
 
-# ----------------------------------------------------------------- run
+# ----------------------------------------------------------------- pipeline
 
-def _run_pipeline(sample_path: Path, regenerate: bool) -> dict | None:
-    """Run analyze -> generate -> verify -> repair. Return a result dict."""
-    if not sample_path.exists():
-        st.error(f"Sample not found: `{sample_path}`")
-        return None
-
-    cobol = sample_path.read_text(encoding="utf-8")
+def _run_pipeline(
+    cobol: str,
+    sample_key: str | None,
+    regenerate: bool,
+) -> dict | None:
+    """Run analyze -> generate -> verify -> repair."""
 
     with st.status("Running pipeline…", expanded=True) as status:
         st.write("**1 / 4**  Analyzing COBOL…")
@@ -97,7 +120,14 @@ def _run_pipeline(sample_path: Path, regenerate: bool) -> dict | None:
             st.error(f"**generate:** {err}")
             return None
 
-        stress = generate_stress_cases(sample_path.stem)
+        # Stress cases only exist for curated samples.
+        stress = []
+        if sample_key:
+            try:
+                stress = generate_stress_cases(sample_key)
+            except KeyError:
+                stress = []
+
         all_cases = list(generation.test_cases) + stress
         st.write(
             f"**3 / 4**  Verifying {len(all_cases)} cases "
@@ -134,8 +164,27 @@ def _run_pipeline(sample_path: Path, regenerate: bool) -> dict | None:
     }
 
 
+# Clear stale state if the user uploads a different file.
+if source_mode == "Upload" and uploaded_file is not None:
+    token = f"{uploaded_file.name}:{uploaded_file.size}"
+    if token != st.session_state.upload_token:
+        st.session_state.upload_token = token
+        st.session_state.result = None
+
+
 if run_clicked:
-    st.session_state.result = _run_pipeline(SAMPLES[sample_name], regenerate)
+    if source_mode == "Sample":
+        path = SAMPLES[sample_name]
+        if not path.exists():
+            st.error(f"Sample not found: `{path}`")
+        else:
+            cobol = path.read_text(encoding="utf-8")
+            st.session_state.result = _run_pipeline(cobol, sample_name, regenerate)
+    else:
+        raw = uploaded_file.read()
+        cobol = raw.decode("utf-8-sig", errors="replace")
+        cobol = cobol.replace("\r\n", "\n").replace("\r", "\n")
+        st.session_state.result = _run_pipeline(cobol, None, regenerate=True)
 
 
 # ----------------------------------------------------------------- tabs
@@ -151,7 +200,7 @@ tab_exp, tab_rules, tab_java, tab_tests, tab_verify = st.tabs(
 
 with tab_exp:
     if not result:
-        st.info("Click **▶ Run pipeline** in the sidebar to start.")
+        st.info("Choose a source in the sidebar, then click **▶ Run pipeline**.")
     else:
         a = result["analysis"]
         st.subheader("Summary")
@@ -167,8 +216,10 @@ with tab_exp:
             for o in a.outputs:
                 st.markdown(f"- {o}")
 
-        if a.risks:
-            st.subheader("Risks")
+        st.subheader("Risks")
+        if not a.risks:
+            st.success("No risks flagged for this program.")
+        else:
             for r in a.risks:
                 st.warning(r)
 
@@ -177,7 +228,7 @@ with tab_exp:
 
 with tab_rules:
     if not result:
-        st.info("Click **▶ Run pipeline** in the sidebar to start.")
+        st.info("Choose a source in the sidebar, then click **▶ Run pipeline**.")
     else:
         rules = result["analysis"].business_rules
         if not rules:
@@ -202,10 +253,19 @@ with tab_rules:
 
 with tab_java:
     if not result:
-        st.info("Click **▶ Run pipeline** in the sidebar to start.")
+        st.info("Choose a source in the sidebar, then click **▶ Run pipeline**.")
     else:
         g = result["generation"]
         st.code(g.java_source, language="java")
+
+        st.download_button(
+            label="⬇  Download Main.java",
+            data=g.java_source,
+            file_name="Main.java",
+            mime="text/x-java-source",
+            use_container_width=True,
+        )
+
         if g.notes:
             st.subheader("Notes")
             for n in g.notes:
@@ -216,7 +276,7 @@ with tab_java:
 
 with tab_tests:
     if not result:
-        st.info("Click **▶ Run pipeline** in the sidebar to start.")
+        st.info("Choose a source in the sidebar, then click **▶ Run pipeline**.")
     else:
         all_cases = result["all_cases"]
         n_semantic = len(result["generation"].test_cases)
@@ -235,7 +295,7 @@ with tab_tests:
 
 with tab_verify:
     if not result:
-        st.info("Click **▶ Run pipeline** in the sidebar to start.")
+        st.info("Choose a source in the sidebar, then click **▶ Run pipeline**.")
     else:
         report = result["report"]
         all_cases = result["all_cases"]
@@ -254,12 +314,22 @@ with tab_verify:
             "same stdin. Stdout must match byte-for-byte."
         )
 
+        # Download the full report as JSON
+        st.download_button(
+            label="⬇  Download verification report (JSON)",
+            data=report.model_dump_json(indent=2),
+            file_name="verification_report.json",
+            mime="application/json",
+        )
+
         # Compact summary table
         st.dataframe(
             [
                 {
                     "Case": c.name,
-                    "stdin": stdin_by_name.get(c.name, "").strip().replace("\n", " · "),
+                    "stdin": stdin_by_name.get(c.name, "")
+                        .strip()
+                        .replace("\n", " · "),
                     "Match": "✓" if c.match else "✗",
                     "Reason": c.reason or "",
                 }
@@ -275,8 +345,7 @@ with tab_verify:
 
         for c in report.results:
             icon = "✓" if c.match else "✗"
-            label = f"{icon}  {c.name}"
-            with st.expander(label, expanded=expand_all or not c.match):
+            with st.expander(f"{icon}  {c.name}", expanded=expand_all or not c.match):
                 col1, col2 = st.columns(2)
                 with col1:
                     st.caption("COBOL output")

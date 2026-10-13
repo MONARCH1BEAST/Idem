@@ -168,9 +168,11 @@ def _compile(
     cobol_dir.mkdir()
     java_dir.mkdir()
     cobol_file = cobol_dir / "program.cob"
-    cobol_file.write_text(cobol_src, encoding="utf-8")
+    normalized_cobol = cobol_src.replace("\r\n", "\n").replace("\r", "\n")
+    cobol_file.write_bytes(normalized_cobol.encode("utf-8"))
     java_file = java_dir / "Main.java"
-    java_file.write_text(java_src, encoding="utf-8")
+    normalized_java = java_src.replace("\r\n", "\n").replace("\r", "\n")
+    java_file.write_bytes(normalized_java.encode("utf-8"))
     cobol_exe = cobol_dir / ("program.exe" if os.name == "nt" else "program")
 
     _require_success("COBOL compilation", _run([cobc, "-x", "-o", str(cobol_exe), str(cobol_file)], env=env))
