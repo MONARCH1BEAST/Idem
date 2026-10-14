@@ -1,0 +1,90 @@
+The generated Java does not match the COBOL output for one or more test cases.
+
+COBOL program:
+---
+{COBOL_SOURCE}
+---
+
+Current Java:
+---
+{JAVA_SOURCE}
+---
+
+For each failing test case, here is what the two programs actually printed:
+
+{DIFF_JSON}
+
+Each entry shows:
+- "name": test case name
+- "stdin": the exact input
+- "cobol_output": what the ORIGINAL COBOL program printed
+- "java_output": what YOUR JAVA printed
+
+Your job is to make the Java print EXACTLY what COBOL prints.
+
+Common causes of mismatch:
+1. Padding: COBOL left-pads to the PIC width. Java often does not.
+   For PIC 9(N)V99, use String.format(Locale.ROOT, "%0(N+3).2f", value).
+   Example: PIC 9(7)V99 -> "%010.2f". The 10 covers 7 integer digits,
+   1 decimal point, and 2 decimal digits. Do NOT use "%07.2f".
+2. Sign: COBOL discards the sign for unsigned PIC fields (9...).
+   Fix: call .abs() before formatting if the PIC is unsigned.
+3. Rounding: COBOL ROUNDED uses HALF_UP; non-ROUNDED truncates with DOWN.
+   Fix: match the exact RoundingMode from the COBOL statement.
+4. Locale: thousands separators from a non-ROOT locale.
+   Fix: always pass Locale.ROOT to String.format.
+5. Overflow: if the Java output is much larger than the COBOL output,
+   the test case is asking for a value that overflows the PIC. This is
+   out of scope. Report the overflow in notes and leave the test case
+   unchanged.
+
+Rules for the corrected Java:
+- Single class named `Main`.
+- Reads stdin via BufferedReader on InputStreamReader(System.in).
+- Uses BigDecimal for every numeric field.
+- Formats output with String.format(Locale.ROOT, "%0Nd.2f", value.abs()).
+- Includes every import.
+- Never emits the entire class on one line.
+
+Return a JSON object with:
+- "java_source": the corrected Java source.
+- "test_cases": the SAME list of test cases as before, unchanged.
+- "notes": list of strings explaining what you changed and why.
+
+ARITHMETIC PRECISION (must be obeyed exactly):
+
+COBOL COMPUTE statements keep full intermediate precision and round only
+the final result. Java must do the same.
+
+1. Multiply all numerators together first.
+2. Multiply all denominators together.
+3. Divide EXACTLY ONCE at the end.
+4. The final divide must specify:
+   - scale = number of decimal places in the target PIC clause
+   - RoundingMode = HALF_UP if the COBOL statement has ROUNDED,
+     DOWN if it does not
+
+Example:
+
+COBOL:
+    COMPUTE WS-INTEREST ROUNDED =
+        WS-PRINCIPAL * WS-RATE / 100 * WS-TERM / 12.
+
+Target PIC: 9(7)V99 (2 decimal places, ROUNDED).
+
+Correct Java:
+    BigDecimal numerator   = principal.multiply(rate).multiply(term);
+    BigDecimal denominator = new BigDecimal("1200");
+    BigDecimal interest    = numerator.divide(
+        denominator, 2, RoundingMode.HALF_UP);
+
+Incorrect Java (do NOT do this):
+    principal.multiply(rate).divide(new BigDecimal(100))
+        .multiply(term).divide(new BigDecimal(12), RoundingMode.HALF_UP)
+
+Rules:
+- NEVER chain two divide calls.
+- NEVER call divide without an explicit scale.
+- NEVER rely on the default scale of the dividend.
+- The scale in the final divide must equal the number of V-digits in the
+  target PIC clause (V99 -> scale 2, V999 -> scale 3).
