@@ -138,7 +138,7 @@ def _run_pipeline(
         if sample_key:
             try:
                 stress = generate_stress_cases(sample_key)
-            except KeyError:
+            except (KeyError, ValueError):
                 stress = []
 
         all_cases = list(generation.test_cases) + stress
@@ -227,13 +227,27 @@ if run_clicked:
         raw = uploaded_file.read()
         cobol = raw.decode("utf-8-sig", errors="replace")
         cobol = cobol.replace("\r\n", "\n").replace("\r", "\n")
-        sample_key = Path(uploaded_file.name).stem
-        st.session_state.result = _run_pipeline(
-            cobol,
-            sample_key,
-            regenerate=True,
-            improve=improve_mode,
-        )
+
+        upper = cobol.upper()
+        required = ["IDENTIFICATION DIVISION", "PROCEDURE DIVISION"]
+        missing = [kw for kw in required if kw not in upper]
+
+        if missing:
+            st.error(
+                "This does not look like a COBOL program. "
+                f"Missing: {', '.join(missing)}. "
+                "A valid COBOL source must contain IDENTIFICATION DIVISION "
+                "and PROCEDURE DIVISION."
+            )
+            st.session_state.result = None
+        elif len(cobol) > 200_000:
+            st.error(
+                f"File is too large ({len(cobol):,} characters). "
+                "The MVP handles single self-contained programs only."
+            )
+            st.session_state.result = None
+        else:
+            st.session_state.result = _run_pipeline(cobol, None, regenerate=True)
 
 
 # ----------------------------------------------------------------- tabs
@@ -314,6 +328,15 @@ with tab_java:
             mime="text/x-java-source",
             use_container_width=True,
         )
+
+        if improve_mode and g.notes:
+            st.subheader("Improvements made")
+            st.info(
+                "Improve mode is ON. The Java above may intentionally "
+                "differ from the COBOL. Each change is listed here."
+            )
+            for n in g.notes:
+                st.markdown(f"- {n}")
 
         if g.notes:
             st.subheader("Notes")

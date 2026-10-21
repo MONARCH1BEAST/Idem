@@ -72,8 +72,22 @@ TEST CASE CONSTRAINTS:
 Return a JSON object with:
 - "java_source": the complete Java source as a string.
 - "test_cases": list of objects with "name" and "stdin".
-- "notes": list of strings. Include each intentional divergence from
-  COBOL and explain why it is logically correct.
+- "notes": list of strings. REQUIRED when improve mode is active.
+  For every change you make from strict COBOL equivalence, add one entry
+  in this format:
+      "CHANGED: <what changed>. COBOL does <old behaviour>. Java does
+       <new behaviour>. Reason: <why the COBOL is wrong>."
+  If you made no changes, add one entry:
+      "No divergences: the Java matches COBOL byte-for-byte."
+
+  Examples:
+      "CHANGED: comparison operator. COBOL compares PIC 999.99 as a
+       display string, so '084.33 >= 40' evaluates false. Java compares
+       numerically, so it evaluates true. Reason: COBOL field is
+       numeric in intent; the display comparison is a bug."
+      "CHANGED: rounding. COBOL truncates at the final divide. Java uses
+       HALF_UP. Reason: the COBOL COMPUTE lacks ROUNDED, which is
+       almost certainly unintended for a monetary calculation."
 
 Use this analysis as your guide:
 ---

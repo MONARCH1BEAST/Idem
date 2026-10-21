@@ -1,0 +1,29 @@
+{
+  "key": "cc3bb9341118c5f8",
+  "prompt_name": "generate_improved",
+  "model": "qwen2.5-coder:7b",
+  "temperature": 0.0,
+  "input_hash": "077b5aa74075719b10b03af49d2be0a6acf3750556aba388284b8c0fe59c4964",
+  "created_at": "2026-10-15T19:38:14Z",
+  "raw_response": "{\n  \"java_source\": \"import java.io.BufferedReader;\\nimport java.io.InputStreamReader;\\nimport java.math.BigDecimal;\\nimport java.math.RoundingMode;\\nimport java.util.Locale;\\n\\npublic class Main {\\n    public static void main(String[] args) throws Exception {\\n        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));\\n        BigDecimal principal = new BigDecimal(reader.readLine().trim());\\n        BigDecimal rate = new BigDecimal(reader.readLine().trim());\\n        BigDecimal term = new BigDecimal(reader.readLine().trim());\\n\\n        BigDecimal numerator = principal.multiply(rate).multiply(term);\\n        BigDecimal denominator = new BigDecimal(\\\"1200\\\");\\n        BigDecimal interest = numerator.divide(denominator, 2, RoundingMode.HALF_UP);\\n        BigDecimal total = principal.add(interest);\\n\\n        String formattedInterest = String.format(Locale.ROOT, \\\"%010.2f\\\", interest.abs());\\n        String formattedTotal = String.format(Locale.ROOT, \\\"%010.2f\\\", total.abs());\\n\\n        System.out.println(\\\"INTEREST=\\\" + formattedInterest);\\n        System.out.println(\\\"TOTAL=\\\" + formattedTotal);\\n    }\\n}\",\n  \"test_cases\": [\n    {\n      \"name\": \"Typical case\",\n      \"stdin\": \"1000.00\\n5.00\\n12\\n\"\n    },\n    {\n      \"name\": \"Zero principal\",\n      \"stdin\": \"0.00\\n5.00\\n12\\n\"\n    },\n    {\n      \"name\": \"Rounding boundary at .xx5\",\n      \"stdin\": \"1000.00\\n5.00\\n12\\n\"\n    }\n  ],\n  \"notes\": [\n    \"No divergences: the Java matches COBOL byte-for-byte.\"\n  ]\n}",
+  "parsed": {
+    "java_source": "import java.io.BufferedReader;\nimport java.io.InputStreamReader;\nimport java.math.BigDecimal;\nimport java.math.RoundingMode;\nimport java.util.Locale;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));\n        BigDecimal principal = new BigDecimal(reader.readLine().trim());\n        BigDecimal rate = new BigDecimal(reader.readLine().trim());\n        BigDecimal term = new BigDecimal(reader.readLine().trim());\n\n        BigDecimal numerator = principal.multiply(rate).multiply(term);\n        BigDecimal denominator = new BigDecimal(\"1200\");\n        BigDecimal interest = numerator.divide(denominator, 2, RoundingMode.HALF_UP);\n        BigDecimal total = principal.add(interest);\n\n        String formattedInterest = String.format(Locale.ROOT, \"%010.2f\", interest.abs());\n        String formattedTotal = String.format(Locale.ROOT, \"%010.2f\", total.abs());\n\n        System.out.println(\"INTEREST=\" + formattedInterest);\n        System.out.println(\"TOTAL=\" + formattedTotal);\n    }\n}",
+    "test_cases": [
+      {
+        "name": "Typical case",
+        "stdin": "1000.00\n5.00\n12\n"
+      },
+      {
+        "name": "Zero principal",
+        "stdin": "0.00\n5.00\n12\n"
+      },
+      {
+        "name": "Rounding boundary at .xx5",
+        "stdin": "1000.00\n5.00\n12\n"
+      }
+    ],
+    "notes": [
+      "No divergences: the Java matches COBOL byte-for-byte."
+    ]
+  }
+}

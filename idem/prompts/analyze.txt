@@ -22,8 +22,8 @@ Read the COBOL program below and return a JSON object with these fields:
     - "Division without ROUNDED at line N" — ONLY if a divide lacks ROUNDED
 
   If a category does not apply to this specific program, DO NOT list it.
-  An empty list is a valid and correct answer.
-  Do not list a risk that you cannot tie to a specific line number.
+  An empty list is a valid and correct answer. Never list a risk you
+  cannot tie to a specific line number.
 
 Rules:
 - Do not invent behavior. If something is ambiguous, say so in "risks".

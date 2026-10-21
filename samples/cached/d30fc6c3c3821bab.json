@@ -1,0 +1,30 @@
+{
+  "key": "d30fc6c3c3821bab",
+  "prompt_name": "analyze",
+  "model": "qwen2.5-coder:7b",
+  "temperature": 0.0,
+  "input_hash": "0f04d2945c530ce71665ae779437fb904ade723d432cf3b6a31b08e5376792c9",
+  "created_at": "2026-10-15T19:34:45Z",
+  "raw_response": "{\n  \"summary\": \"This COBOL program calculates the interest and total amount for a loan based on the principal, rate, and term provided by the user.\",\n  \"inputs\": [\"WS-PRINCIPAL\", \"WS-RATE\", \"WS-TERM\"],\n  \"outputs\": [\"INTEREST\", \"TOTAL\"],\n  \"business_rules\": [\n    {\n      \"id\": \"R1\",\n      \"description\": \"The interest is calculated by multiplying the principal by the rate, dividing by 100, multiplying by the term, and then dividing by 12.\",\n      \"cobol_lines\": \"42-43\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"risks\": []\n}",
+  "parsed": {
+    "summary": "This COBOL program calculates the interest and total amount for a loan based on the principal, rate, and term provided by the user.",
+    "inputs": [
+      "WS-PRINCIPAL",
+      "WS-RATE",
+      "WS-TERM"
+    ],
+    "outputs": [
+      "INTEREST",
+      "TOTAL"
+    ],
+    "business_rules": [
+      {
+        "id": "R1",
+        "description": "The interest is calculated by multiplying the principal by the rate, dividing by 100, multiplying by the term, and then dividing by 12.",
+        "cobol_lines": "42-43",
+        "confidence": 1.0
+      }
+    ],
+    "risks": []
+  }
+}
