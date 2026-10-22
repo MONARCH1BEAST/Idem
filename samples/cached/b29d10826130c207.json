@@ -4,7 +4,7 @@
   "model": "qwen2.5-coder:7b",
   "temperature": 0.0,
   "input_hash": "146a16429c38ee6ca62d184991e14e568c09230ec5d37ec5d52516dad3af6365",
-  "created_at": "2026-10-16T07:09:24Z",
+  "created_at": "2026-10-22T09:01:02Z",
   "raw_response": "{\n  \"summary\": \"This COBOL program prompts the user to enter two numbers, adds them together, and then displays the result.\",\n  \"inputs\": [\"NUM1\", \"NUM2\"],\n  \"outputs\": [\"FIRST NUMBER\", \"SECOND NUMBER\", \"SUM IS\"],\n  \"business_rules\": [],\n  \"risks\": []\n}",
   "parsed": {
     "summary": "This COBOL program prompts the user to enter two numbers, adds them together, and then displays the result.",
