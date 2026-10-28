@@ -1,93 +1,27 @@
-You are a senior Java engineer. Translate the COBOL program below into a single
-Java 21 class named `Main`. Match COBOL behavior unless the COBOL has an obvious
-bug; in that case, produce logically correct Java and document the intentional
-change in the `notes` field.
+You are a senior Java engineer. Translate the COBOL program below into Java 21.
+You are operating in IMPROVE MODE. 
 
-I/O CONTRACT (must be obeyed exactly):
+I/O CONTRACT:
 - Read input from stdin, one value per line.
-- Print output to stdout, one `LABEL=value` pair per line.
-- No extra text, no blank lines, no headers.
+- Print output to stdout EXACTLY as the COBOL does, including DISPLAY headers and IF/ELSE logic.
+- Do NOT omit DISPLAY headers or control flow.
 
-PIC CLAUSE SEMANTICS:
+ARITHMETIC & CONTROL FLOW:
+- Use BigDecimal for every numeric field.
+- Translate every IF / ELSE / END-IF statement into a Java `if` / `else`.
+- If the COBOL contains an obvious bug (e.g., comparing a PIC 999.99 string numerically, or missing ROUNDED on currency), you MAY fix it in the Java.
+- If you fix a bug, you MUST document it in the "notes" field.
 
-Interpret each COBOL PIC clause according to its declared width and sign.
-Preserve the COBOL behavior unless that behavior is an obvious bug. If an
-obvious bug makes the COBOL result logically incorrect, implement the
-logically correct result in Java and describe the intentional divergence in
-the `notes` field.
-
-FORMATTING RULES:
-
-Match COBOL's output labels, field widths, decimal places, padding, and sign
-behavior unless the COBOL formatting itself reflects an obvious bug. For an
-obvious bug, use logically correct formatting and document the intentional
-divergence in the `notes` field.
-
-Use `String.format(Locale.ROOT, ...)` for numeric formatting. Do not use
-`BigDecimal.setScale` with `toString` or `DecimalFormat`.
-
-REFERENCE IMPLEMENTATION (adapt the input handling and arithmetic):
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.Locale;
-
-public class Main {
-    public static void main(String[] args) throws Exception {
-        BufferedReader reader = new BufferedReader(
-            new InputStreamReader(System.in));
-        BigDecimal principal = new BigDecimal(reader.readLine().trim());
-        BigDecimal rate = new BigDecimal(reader.readLine().trim());
-        BigDecimal term = new BigDecimal(reader.readLine().trim());
-
-        // ... arithmetic using BigDecimal and explicit RoundingMode ...
-
-        String formatted = String.format(Locale.ROOT, "%010.2f", value.abs());
-        System.out.println("LABEL=" + formatted);
-    }
-}
-
-CRITICAL:
-- Read stdin ONLY via BufferedReader.readLine() on top of an
-  InputStreamReader wrapping System.in. Never call readLine() directly
-  on System.in. Never use Scanner unless you import java.util.Scanner.
-- Include every import at the top of the file, one per line.
-- Never emit the entire class on one line.
-- Use `String.format` with `Locale.ROOT` for numeric formatting.
-
-TEST CASE CONSTRAINTS:
-- Generate 3 to 5 test cases.
-- Each test case MUST have a unique stdin.
-- The computed outputs should fit within the declared PIC clauses unless
-  exercising an obvious bug requires a different logically correct result.
-- Required cases: one typical, one zero, one rounding boundary.
-- Optional: one negative input (only if all output PICs are signed),
-  one very small (1 or 2), one near-maximum but safe.
-- Name each case descriptively (e.g. "Typical case", "Rounding
-  boundary at .xx5").
-- Do NOT generate more than 5 cases.
+TEST CASES:
+- Generate 3 to 5 test cases, ensuring inputs are valid integers.
 
 Return a JSON object with:
 - "java_source": the complete Java source as a string.
 - "test_cases": list of objects with "name" and "stdin".
 - "notes": list of strings. REQUIRED when improve mode is active.
-  For every change you make from strict COBOL equivalence, add one entry
-  in this format:
-      "CHANGED: <what changed>. COBOL does <old behaviour>. Java does
-       <new behaviour>. Reason: <why the COBOL is wrong>."
-  If you made no changes, add one entry:
-      "No divergences: the Java matches COBOL byte-for-byte."
-
-  Examples:
-      "CHANGED: comparison operator. COBOL compares PIC 999.99 as a
-       display string, so '084.33 >= 40' evaluates false. Java compares
-       numerically, so it evaluates true. Reason: COBOL field is
-       numeric in intent; the display comparison is a bug."
-      "CHANGED: rounding. COBOL truncates at the final divide. Java uses
-       HALF_UP. Reason: the COBOL COMPUTE lacks ROUNDED, which is
-       almost certainly unintended for a monetary calculation."
+  For every change you make from strict COBOL equivalence, add one entry:
+  "CHANGED: <what changed>. COBOL does <old behaviour>. Java does <new behaviour>. Reason: <why the COBOL is wrong>."
+  If you made no changes, add: "No divergences: the Java matches COBOL byte-for-byte."
 
 Use this analysis as your guide:
 ---
@@ -98,33 +32,3 @@ COBOL program:
 ---
 {COBOL_SOURCE}
 ---
-
-ARITHMETIC PRECISION:
-
-Match COBOL's arithmetic and rounding unless the COBOL contains an obvious
-bug. For ordinary COBOL behavior, keep full intermediate precision and round
-only the final result:
-
-1. Multiply all numerators together first.
-2. Multiply all denominators together.
-3. Divide once at the end.
-4. The final divide should specify the target scale and the COBOL rounding
-   behavior: HALF_UP if the COBOL statement has ROUNDED, DOWN if it does not.
-
-Example:
-
-COBOL:
-    COMPUTE WS-INTEREST ROUNDED =
-        WS-PRINCIPAL * WS-RATE / 100 * WS-TERM / 12.
-
-Target PIC: 9(7)V99 (2 decimal places, ROUNDED).
-
-Correct Java when matching normal COBOL behavior:
-    BigDecimal numerator   = principal.multiply(rate).multiply(term);
-    BigDecimal denominator = new BigDecimal("1200");
-    BigDecimal interest    = numerator.divide(
-        denominator, 2, RoundingMode.HALF_UP);
-
-If an obvious COBOL bug makes this behavior logically incorrect, implement
-the logically correct Java behavior instead and document the specific
-intentional divergence in the `notes` field.

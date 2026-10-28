@@ -18,8 +18,8 @@ import streamlit as st
 
 from idem.analyze import analyze
 from idem.decisions import clear_decision, save_decision
+from idem.diagnose import diagnose
 from idem.generate import generate
-from idem.repair import repair
 from idem.schemas import DivergenceDecision
 from idem.testcases import generate_stress_cases
 from idem.verify import verify
@@ -56,7 +56,6 @@ with st.sidebar:
         "Improve mode (fix obvious COBOL bugs)",
         value=False,
     )
-
     source_mode = st.radio(
         "Source",
         ["Sample", "Upload COBOL file"],
@@ -95,8 +94,7 @@ with st.sidebar:
         "**Pipeline**\n\n"
         "1. Analyze COBOL\n"
         "2. Generate Java\n"
-        "3. Verify side-by-side\n"
-        "4. Repair once if needed\n\n"
+        "3. Verify side-by-side\n\n"
         "**Verification**\n\n"
         "Compiles COBOL with `cobc`, Java with `javac`, runs both on the "
         "same stdin, compares stdout byte-for-byte."
@@ -111,17 +109,17 @@ def _run_pipeline(
     regenerate: bool,
     improve: bool = False,
 ) -> dict | None:
-    """Run analyze -> generate -> verify -> repair."""
+    """Run analyze -> generate -> verify."""
 
     with st.status("Running pipeline…", expanded=True) as status:
-        st.write("**1 / 4**  Analyzing COBOL…")
+        st.write("**1 / 3**  Analyzing COBOL…")
         analysis, err = analyze(cobol, regenerate=regenerate)
         if err:
             status.update(label="Analyze failed", state="error")
             st.error(f"**analyze:** {err}")
             return None
 
-        st.write("**2 / 4**  Generating Java…")
+        st.write("**2 / 3**  Generating Java…")
         generation, err = generate(
             cobol,
             analysis,
@@ -138,12 +136,12 @@ def _run_pipeline(
         if sample_key:
             try:
                 stress = generate_stress_cases(sample_key)
-            except (KeyError, ValueError):
+            except (KeyError,ValueError):
                 stress = []
 
         all_cases = list(generation.test_cases) + stress
         st.write(
-            f"**3 / 4**  Verifying {len(all_cases)} cases "
+            f"**3 / 3**  Verifying {len(all_cases)} cases "
             f"({len(generation.test_cases)} semantic + {len(stress)} stress)…"
         )
         report = verify(
@@ -152,40 +150,6 @@ def _run_pipeline(
             all_cases,
             sample_key=sample_key,
         )
-
-        decisions_by_name = {
-            decision.case_name: decision for decision in report.decisions
-        }
-        repairable = [
-            case
-            for case in report.results
-            if not case.match
-            and not case.accepted_by_reviewer
-            and not (
-                case.name in decisions_by_name
-                and decisions_by_name[case.name].decision == "skip"
-            )
-        ]
-        if repairable:
-            st.write(f"**4 / 4**  {len(repairable)} mismatch(es) — attempting repair…")
-            repaired, rerr = repair(
-                cobol,
-                generation.java_source,
-                all_cases,
-                report,
-                regenerate=regenerate,
-            )
-            if rerr:
-                st.warning(f"Repair failed: {rerr}")
-            elif repaired:
-                generation = repaired
-                st.write("Re-verifying after repair…")
-                report = verify(
-                    cobol,
-                    repaired.java_source,
-                    all_cases,
-                    sample_key=sample_key,
-                )
 
         status.update(
             label=f"Done — {report.passed} / {len(report.results)} passed",
@@ -198,6 +162,7 @@ def _run_pipeline(
         "report": report,
         "all_cases": all_cases,
         "cobol": cobol,
+        "cobol_src": cobol,
         "sample_key": sample_key,
     }
 
@@ -227,27 +192,13 @@ if run_clicked:
         raw = uploaded_file.read()
         cobol = raw.decode("utf-8-sig", errors="replace")
         cobol = cobol.replace("\r\n", "\n").replace("\r", "\n")
-
-        upper = cobol.upper()
-        required = ["IDENTIFICATION DIVISION", "PROCEDURE DIVISION"]
-        missing = [kw for kw in required if kw not in upper]
-
-        if missing:
-            st.error(
-                "This does not look like a COBOL program. "
-                f"Missing: {', '.join(missing)}. "
-                "A valid COBOL source must contain IDENTIFICATION DIVISION "
-                "and PROCEDURE DIVISION."
-            )
-            st.session_state.result = None
-        elif len(cobol) > 200_000:
-            st.error(
-                f"File is too large ({len(cobol):,} characters). "
-                "The MVP handles single self-contained programs only."
-            )
-            st.session_state.result = None
-        else:
-            st.session_state.result = _run_pipeline(cobol, None, regenerate=True)
+        sample_key = Path(uploaded_file.name).stem
+        st.session_state.result = _run_pipeline(
+            cobol,
+            sample_key,
+            regenerate=True,
+            improve=improve_mode,
+        )
 
 
 # ----------------------------------------------------------------- tabs
@@ -319,6 +270,18 @@ with tab_java:
         st.info("Choose a source in the sidebar, then click **▶ Run pipeline**.")
     else:
         g = result["generation"]
+
+        # Showcase Improve Mode
+        if improve_mode and g.notes:
+            st.warning("### 🛠️ Improvements Made by Idem")
+            st.markdown(
+                "You are in **Improve mode**. The generated Java intentionally diverges "
+                "from the original COBOL to fix bugs. Here is exactly what was changed:"
+            )
+            for note in g.notes:
+                st.info(note)
+            st.divider()
+
         st.code(g.java_source, language="java")
 
         st.download_button(
@@ -329,16 +292,7 @@ with tab_java:
             use_container_width=True,
         )
 
-        if improve_mode and g.notes:
-            st.subheader("Improvements made")
-            st.info(
-                "Improve mode is ON. The Java above may intentionally "
-                "differ from the COBOL. Each change is listed here."
-            )
-            for n in g.notes:
-                st.markdown(f"- {n}")
-
-        if g.notes:
+        if g.notes and not improve_mode:
             st.subheader("Notes")
             for n in g.notes:
                 st.markdown(f"- {n}")
@@ -445,6 +399,26 @@ with tab_verify:
                     st.caption(f"stderr: {c.stderr}")
                 if not c.match and c.reason:
                     st.error(f"Reason: {c.reason}")
+
+                if not c.match:
+                    btn_key = f"diag_{c.name}"
+                    if st.button("🤖 Explain this mismatch", key=btn_key):
+                        with st.spinner("Analyzing divergence..."):
+                            cobol_src = result.get("cobol_src", "")
+                            if not cobol_src and sample_name:
+                                cobol_src = SAMPLES[sample_name].read_text()
+
+                            exp, err = diagnose(
+                                cobol_src=cobol_src,
+                                java_src=result["generation"].java_source,
+                                stdin=stdin_by_name.get(c.name, ""),
+                                cobol_output=c.cobol_output,
+                                java_output=c.java_output,
+                            )
+                            if err:
+                                st.error(f"Failed to diagnose: {err}")
+                            else:
+                                st.info(f"**Root Cause:** {exp}")
 
                 if not c.match and not c.accepted_by_reviewer:
                     existing_decision = next(

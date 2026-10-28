@@ -4,7 +4,6 @@ from pathlib import Path
 
 from idem.analyze import analyze
 from idem.generate import generate
-from idem.repair import repair
 from idem.testcases import generate_stress_cases
 
 
@@ -46,39 +45,6 @@ def run_pipeline(
             file=sys.stderr,
         )
         report = verify(cobol, generation.java_source, all_cases, sample_key)
-        repaired_once = False
-        decisions_by_name = {
-            decision.case_name: decision for decision in report.decisions
-        }
-        repairable = [
-            case
-            for case in report.results
-            if not case.match
-            and not case.accepted_by_reviewer
-            and not (
-                case.name in decisions_by_name
-                and decisions_by_name[case.name].decision == "skip"
-            )
-        ]
-        if repairable and not repaired_once:
-            print("[4/4] repair...", file=sys.stderr)
-            repaired, err = repair(
-                cobol,
-                generation.java_source,
-                all_cases,
-                report,
-            )
-            if repaired:
-                report = verify(
-                    cobol,
-                    repaired.java_source,
-                    all_cases,
-                    sample_key,
-                )
-                generation = repaired
-            elif err:
-                print(f"  repair failed: {err}", file=sys.stderr)
-            repaired_once = True
     except ImportError:
         report = None
         print("  (verify.py not available yet — skipping)", file=sys.stderr)

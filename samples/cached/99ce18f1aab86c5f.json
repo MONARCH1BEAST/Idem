@@ -1,0 +1,30 @@
+{
+  "key": "99ce18f1aab86c5f",
+  "prompt_name": "generate",
+  "model": "qwen2.5-coder:7b",
+  "temperature": 0.0,
+  "input_hash": "12f7e6929c8de55b535d0913eca60c6119efdab34699f39c2375573bd4ba3038",
+  "created_at": "2026-10-24T09:34:52Z",
+  "raw_response": "{\n  \"java_source\": \"import java.math.BigDecimal;\\nimport java.math.RoundingMode;\\nimport java.util.Locale;\\nimport java.io.BufferedReader;\\nimport java.io.InputStreamReader;\\n\\npublic class Main {\\n    public static void main(String[] args) throws Exception {\\n        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));\\n        String input = reader.readLine();\\n        BigDecimal principal = new BigDecimal(input);\\n        input = reader.readLine();\\n        BigDecimal rate = new BigDecimal(input);\\n        input = reader.readLine();\\n        BigDecimal term = new BigDecimal(input);\\n        BigDecimal interest = principal.multiply(rate).divide(new BigDecimal(100), 2, RoundingMode.HALF_UP).multiply(term).divide(new BigDecimal(12), 2, RoundingMode.HALF_UP);\\n        BigDecimal total = principal.add(interest);\\n        System.out.println(\\\"INTEREST=\\\" + String.format(Locale.ROOT, \\\"%010.2f\\\", interest.abs()));\\n        System.out.println(\\\"TOTAL=\\\" + String.format(Locale.ROOT, \\\"%010.2f\\\", total.abs()));\\n    }\\n}\",\n  \"test_cases\": [\n    {\n      \"name\": \"Test Case 1\",\n      \"stdin\": \"10000\\n5\\n2\\n\"\n    },\n    {\n      \"name\": \"Test Case 2\",\n      \"stdin\": \"5000\\n3\\n4\\n\"\n    },\n    {\n      \"name\": \"Test Case 3\",\n      \"stdin\": \"20000\\n4\\n1\\n\"\n    }\n  ],\n  \"notes\": [\n    \"The COBOL program calculates the interest and total amount for a loan based on the principal, rate, and term provided by the user. It then displays the interest and total amount.\",\n    \"The Java program reads the input values, calculates the interest and total amount using BigDecimal for precise arithmetic, and prints the results in the specified format.\"\n  ]\n}",
+  "parsed": {
+    "java_source": "import java.math.BigDecimal;\nimport java.math.RoundingMode;\nimport java.util.Locale;\nimport java.io.BufferedReader;\nimport java.io.InputStreamReader;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));\n        String input = reader.readLine();\n        BigDecimal principal = new BigDecimal(input);\n        input = reader.readLine();\n        BigDecimal rate = new BigDecimal(input);\n        input = reader.readLine();\n        BigDecimal term = new BigDecimal(input);\n        BigDecimal interest = principal.multiply(rate).divide(new BigDecimal(100), 2, RoundingMode.HALF_UP).multiply(term).divide(new BigDecimal(12), 2, RoundingMode.HALF_UP);\n        BigDecimal total = principal.add(interest);\n        System.out.println(\"INTEREST=\" + String.format(Locale.ROOT, \"%010.2f\", interest.abs()));\n        System.out.println(\"TOTAL=\" + String.format(Locale.ROOT, \"%010.2f\", total.abs()));\n    }\n}",
+    "test_cases": [
+      {
+        "name": "Test Case 1",
+        "stdin": "10000\n5\n2\n"
+      },
+      {
+        "name": "Test Case 2",
+        "stdin": "5000\n3\n4\n"
+      },
+      {
+        "name": "Test Case 3",
+        "stdin": "20000\n4\n1\n"
+      }
+    ],
+    "notes": [
+      "The COBOL program calculates the interest and total amount for a loan based on the principal, rate, and term provided by the user. It then displays the interest and total amount.",
+      "The Java program reads the input values, calculates the interest and total amount using BigDecimal for precise arithmetic, and prints the results in the specified format."
+    ]
+  }
+}

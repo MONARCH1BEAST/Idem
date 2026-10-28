@@ -1,0 +1,10 @@
+{
+  "Test Case 3": {
+    "case_name": "Test Case 3",
+    "cobol_output": "===== STUDENT REPORT =====\nEnter student name:\nEnter marks for Subject 1:\nEnter marks for Subject 2:\nEnter marks for Subject 3:\n\n===== RESULT =====\nStudent: Alice Johnson\nTotal Marks: 0285\nAverage: 095.00\nStatus: FAIL",
+    "java_output": "===== STUDENT REPORT =====\nEnter student name:\nEnter marks for Subject 1:\nEnter marks for Subject 2:\nEnter marks for Subject 3:\n\n===== RESULT =====\nStudent: Alice Johnson\nTotal Marks: 0285\nAverage: 95.00\nStatus: PASS",
+    "decision": "accept_java",
+    "reason": "",
+    "decided_at": "2026-10-24T06:04:00.036746+00:00"
+  }
+}

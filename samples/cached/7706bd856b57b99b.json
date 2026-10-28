@@ -1,0 +1,29 @@
+{
+  "key": "7706bd856b57b99b",
+  "prompt_name": "generate",
+  "model": "qwen2.5-coder:7b",
+  "temperature": 0.0,
+  "input_hash": "2a83f9d39d6ebe215c88287e2d86696eb4572274d62951f7adc4fef47476809a",
+  "created_at": "2026-10-24T09:42:45Z",
+  "raw_response": "{\n  \"java_source\": \"import java.math.BigDecimal;\\nimport java.math.RoundingMode;\\nimport java.util.Locale;\\nimport java.io.BufferedReader;\\nimport java.io.InputStreamReader;\\n\\npublic class Main {\\n    public static void main(String[] args) throws Exception {\\n        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));\\n        System.out.println(\\\"===== STUDENT REPORT =====\\\");\\n        System.out.println(\\\"Enter student name:\\\");\\n        String studentName = reader.readLine();\\n\\n        System.out.println(\\\"Enter marks for Subject 1:\\\");\\n        String marks1Str = reader.readLine();\\n        BigDecimal marks1 = new BigDecimal(marks1Str);\\n\\n        System.out.println(\\\"Enter marks for Subject 2:\\\");\\n        String marks2Str = reader.readLine();\\n        BigDecimal marks2 = new BigDecimal(marks2Str);\\n\\n        System.out.println(\\\"Enter marks for Subject 3:\\\");\\n        String marks3Str = reader.readLine();\\n        BigDecimal marks3 = new BigDecimal(marks3Str);\\n\\n        BigDecimal totalMarks = marks1.add(marks2).add(marks3);\\n        BigDecimal averageMarks = totalMarks.divide(new BigDecimal(3), 2, RoundingMode.HALF_UP);\\n\\n        System.out.println();\\n        System.out.println(\\\"===== RESULT =====\\\");\\n        System.out.println(\\\"Student: \\\" + studentName);\\n        System.out.println(\\\"Total Marks: \\\" + String.format(Locale.ROOT, \\\"%04d\\\", totalMarks.intValue()));\\n        System.out.println(\\\"Average: \\\" + String.format(Locale.ROOT, \\\"%.2f\\\", averageMarks.abs()));\\n\\n        if (averageMarks.compareTo(new BigDecimal(40)) >= 0) {\\n            System.out.println(\\\"Status: PASS\\\");\\n        } else {\\n            System.out.println(\\\"Status: FAIL\\\");\\n        }\\n    }\\n}\",\n  \"test_cases\": [\n    {\n      \"name\": \"Test Case 1\",\n      \"stdin\": \"John Doe\\n85\\n90\\n75\"\n    },\n    {\n      \"name\": \"Test Case 2\",\n      \"stdin\": \"Jane Smith\\n55\\n60\\n50\"\n    },\n    {\n      \"name\": \"Test Case 3\",\n      \"stdin\": \"Alice Johnson\\n95\\n95\\n95\"\n    }\n  ],\n  \"notes\": [\n    \"The COBOL program uses PIC 9(3) for marks, which is equivalent to a 3-digit integer in Java.\"\n  ]\n}",
+  "parsed": {
+    "java_source": "import java.math.BigDecimal;\nimport java.math.RoundingMode;\nimport java.util.Locale;\nimport java.io.BufferedReader;\nimport java.io.InputStreamReader;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));\n        System.out.println(\"===== STUDENT REPORT =====\");\n        System.out.println(\"Enter student name:\");\n        String studentName = reader.readLine();\n\n        System.out.println(\"Enter marks for Subject 1:\");\n        String marks1Str = reader.readLine();\n        BigDecimal marks1 = new BigDecimal(marks1Str);\n\n        System.out.println(\"Enter marks for Subject 2:\");\n        String marks2Str = reader.readLine();\n        BigDecimal marks2 = new BigDecimal(marks2Str);\n\n        System.out.println(\"Enter marks for Subject 3:\");\n        String marks3Str = reader.readLine();\n        BigDecimal marks3 = new BigDecimal(marks3Str);\n\n        BigDecimal totalMarks = marks1.add(marks2).add(marks3);\n        BigDecimal averageMarks = totalMarks.divide(new BigDecimal(3), 2, RoundingMode.HALF_UP);\n\n        System.out.println();\n        System.out.println(\"===== RESULT =====\");\n        System.out.println(\"Student: \" + studentName);\n        System.out.println(\"Total Marks: \" + String.format(Locale.ROOT, \"%04d\", totalMarks.intValue()));\n        System.out.println(\"Average: \" + String.format(Locale.ROOT, \"%.2f\", averageMarks.abs()));\n\n        if (averageMarks.compareTo(new BigDecimal(40)) >= 0) {\n            System.out.println(\"Status: PASS\");\n        } else {\n            System.out.println(\"Status: FAIL\");\n        }\n    }\n}",
+    "test_cases": [
+      {
+        "name": "Test Case 1",
+        "stdin": "John Doe\n85\n90\n75"
+      },
+      {
+        "name": "Test Case 2",
+        "stdin": "Jane Smith\n55\n60\n50"
+      },
+      {
+        "name": "Test Case 3",
+        "stdin": "Alice Johnson\n95\n95\n95"
+      }
+    ],
+    "notes": [
+      "The COBOL program uses PIC 9(3) for marks, which is equivalent to a 3-digit integer in Java."
+    ]
+  }
+}

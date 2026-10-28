@@ -1,10 +1,10 @@
 {
-  "key": "d30fc6c3c3821bab",
+  "key": "8841c792cd63daca",
   "prompt_name": "analyze",
   "model": "qwen2.5-coder:7b",
   "temperature": 0.0,
-  "input_hash": "0f04d2945c530ce71665ae779437fb904ade723d432cf3b6a31b08e5376792c9",
-  "created_at": "2026-10-21T09:15:42Z",
+  "input_hash": "348777f67a4ea88f238c3d3e1bae308bdd9758f7858d5fbb70bca4e4372c3a93",
+  "created_at": "2026-10-24T09:34:38Z",
   "raw_response": "{\n  \"summary\": \"This COBOL program calculates the interest and total amount for a loan based on the principal, rate, and term provided by the user. It then displays the interest and total amount.\",\n  \"inputs\": [\"WS-PRINCIPAL\", \"WS-RATE\", \"WS-TERM\"],\n  \"outputs\": [\"INTEREST\", \"TOTAL\"],\n  \"business_rules\": [\n    {\n      \"id\": \"R1\",\n      \"description\": \"The interest is calculated by multiplying the principal by the rate, dividing by 100, multiplying by the term, and then dividing by 12.\",\n      \"cobol_lines\": \"42-43\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"risks\": []\n}",
   "parsed": {
     "summary": "This COBOL program calculates the interest and total amount for a loan based on the principal, rate, and term provided by the user. It then displays the interest and total amount.",

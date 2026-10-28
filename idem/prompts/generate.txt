@@ -1,105 +1,73 @@
 You are a senior Java engineer. Translate the COBOL program below into a single
-Java 21 class named `Main` that behaves identically.
+Java 21 program that behaves identically.
 
-I/O CONTRACT (must be obeyed exactly):
-- Read input from stdin, one value per line.
-- Print output to stdout, one `LABEL=value` pair per line.
-- No extra text, no blank lines, no headers.
+====================================================================
+CRITICAL JAVA BOILERPLATE (DO NOT DEVIATE):
+====================================================================
+1. The public class MUST be named exactly `Main`.
+2. The main method MUST be: `public static void main(String[] args) throws Exception`
+3. You MUST include all necessary imports at the top (e.g., java.math.BigDecimal, java.util.Locale, java.io.BufferedReader, java.io.InputStreamReader).
+4. Read input using exactly this pattern:
+   `BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));`
+   `String input = reader.readLine();`
+   NEVER use `System.in.readLine()`.
 
-PIC CLAUSE SEMANTICS (must be obeyed exactly):
+====================================================================
+I/O CONTRACT & CONTROL FLOW:
+====================================================================
+1. Read input from stdin, one value per line, in the exact order the COBOL reads them.
+2. Print output to stdout EXACTLY as the COBOL program does.
+3. If the COBOL uses `DISPLAY "ENTER NUMBER:"`, the Java MUST have `System.out.println("ENTER NUMBER:");`.
+4. If the COBOL uses `DISPLAY "SUM: " SUM`, the Java MUST print that exact format.
+5. Translate every IF / ELSE / END-IF statement into the equivalent Java `if` / `else` block.
+6. Do NOT omit headers, prompts, or logic. Match COBOL byte-for-byte.
+7. DO NOT INVENT PROMPTS. If the COBOL code has an `ACCEPT` statement WITHOUT a preceding `DISPLAY` statement, you MUST NOT print anything to stdout before calling `reader.readLine()`. Read the input silently.
 
-Given a PIC clause like 9(7)V99, that means:
-- 7 integer digits (left-padded with zeros)
-- 2 decimal digits
-- UNSIGNED (no minus sign, ever)
+====================================================================
+UNIVERSAL PIC CLAUSE FORMATTING (CHEAT SHEET):
+====================================================================
+To match COBOL width, you MUST use `String.format(Locale.ROOT, ...)`.
+Look at the PIC clauses in the COBOL code and map them exactly:
 
-Given a PIC clause like S9(7)V99, that means:
-- 7 integer digits (left-padded with zeros)
-- 2 decimal digits
-- SIGNED (minus sign when negative)
+1. `PIC 9(7)V99` (7 int, 2 dec, padded) 
+   -> `String.format(Locale.ROOT, "%010.2f", value.abs())` 
+   (Example output: 001500.00)
 
-FORMATTING RULES (must be obeyed exactly):
+2. `PIC 9(5)V99` (5 int, 2 dec, padded)
+   -> `String.format(Locale.ROOT, "%08.2f", value.abs())`
+   (Example output: 01500.00)
 
-The format string for String.format is "%0Nd.2f" where N is:
-    N = (integer digits in the PIC) + 3
-The +3 accounts for the decimal point and the two decimal digits.
+3. `PIC 9(4)` (4 int, no dec, padded)
+   -> `String.format(Locale.ROOT, "%04d", value.intValue())`
+   (Example output: 0001)
 
-Worked examples:
-- PIC 9(7)V99  ->  N = 7 + 3 = 10  ->  String.format(Locale.ROOT, "%010.2f", value)
-- PIC 9(5)V99  ->  N = 5 + 3 = 8   ->  String.format(Locale.ROOT, "%08.2f", value)
-- PIC 9(9)V99  ->  N = 9 + 3 = 12  ->  String.format(Locale.ROOT, "%012.2f", value)
+4. `PIC 9(3)` (3 int, no dec, padded)
+   -> `String.format(Locale.ROOT, "%03d", value.intValue())`
 
-Verification:
-  String.format(Locale.ROOT, "%010.2f", new BigDecimal("10000.00"))
-      produces "0010000.00"  (10 characters total)
-  String.format(Locale.ROOT, "%010.2f", new BigDecimal("0.00"))
-      produces "0000000.00"  (10 characters total)
+5. `PIC 999.99` (3 int, 2 dec, NO padding)
+   -> `String.format(Locale.ROOT, "%.2f", value.abs())`
+   (Example output: 85.00)
 
-Do NOT use "%07.2f" for PIC 9(7)V99. The 07 makes the WHOLE number
-7 characters wide, including the decimal point. That is wrong.
+====================================================================
+ARITHMETIC RULES (BigDecimal):
+====================================================================
+1. Every numeric field MUST be a `java.math.BigDecimal`. Never use double or float.
+2. Multiply all numerators together, multiply all denominators together, and divide EXACTLY ONCE at the end. Never chain divide calls.
+3. Set the final divide scale explicitly (e.g., `divide(..., 2, RoundingMode.HALF_UP)`).
+4. If the COBOL uses ROUNDED, use `RoundingMode.HALF_UP`. If it does not, use `RoundingMode.DOWN`.
 
-Additional formatting rules:
-- If the PIC is unsigned and the computed value is negative, take the
-  absolute value. COBOL discards the sign for unsigned fields.
-- Do NOT use BigDecimal.setScale + toString. It does not pad.
-- Do NOT use DecimalFormat. String.format is simpler and less error-prone.
+====================================================================
+TEST CASES:
+====================================================================
+Generate 3 to 5 unique test cases. Inputs must be integers only. Ensure they fit within the PIC limits.
 
-ARITHMETIC RULES (must be obeyed exactly):
-- Every numeric field that is a COBOL fixed-point type (PIC 9..., COMP-3)
-  MUST be a `java.math.BigDecimal`. Never use double or float.
-- COBOL ROUNDED maps to RoundingMode.HALF_UP.
-- A COMPUTE or MOVE without ROUNDED truncates: use RoundingMode.DOWN.
-- Set scale explicitly to match the PIC clause.
-- Preserve signed fields (PIC S9...); handle negative inputs.
-
-REFERENCE IMPLEMENTATION (copy this structure exactly, adapt the arithmetic):
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.Locale;
-
-public class Main {
-    public static void main(String[] args) throws Exception {
-        BufferedReader reader = new BufferedReader(
-            new InputStreamReader(System.in));
-        BigDecimal principal = new BigDecimal(reader.readLine().trim());
-        BigDecimal rate = new BigDecimal(reader.readLine().trim());
-        BigDecimal term = new BigDecimal(reader.readLine().trim());
-
-        // ... arithmetic using BigDecimal and explicit RoundingMode ...
-
-        String formatted = String.format(Locale.ROOT, "%010.2f", value.abs());
-        System.out.println("LABEL=" + formatted);
-    }
-}
-
-CRITICAL:
-- Read stdin ONLY via BufferedReader.readLine() on top of an
-  InputStreamReader wrapping System.in. Never call readLine() directly
-  on System.in. Never use Scanner unless you import java.util.Scanner.
-- Include every import at the top of the file, one per line.
-- Never emit the entire class on one line.
-- String.format with Locale.ROOT is the ONLY approved formatting method.
-
-TEST CASE CONSTRAINTS:
-- Generate 3 to 5 test cases.
-- Each test case MUST have a unique stdin.
-- The computed outputs MUST fit within the PIC clauses. For PIC
-  9(7)V99, the total must stay below 9,999,999.99.
-- Required cases: one typical, one zero, one rounding boundary.
-- Optional: one negative input (only if all output PICs are signed),
-  one very small (1 or 2), one near-maximum but safe.
-- Name each case descriptively (e.g. "Typical case", "Rounding
-  boundary at .xx5").
-- Do NOT generate a maximum value case that could overflow.
-- Do NOT generate more than 5 cases.
-
+====================================================================
+OUTPUT FORMAT:
+====================================================================
 Return a JSON object with:
 - "java_source": the complete Java source as a string.
 - "test_cases": list of objects with "name" and "stdin".
-- "notes": list of strings. Anything a human reviewer should know.
+- "notes": list of strings.
 
 Use this analysis as your guide:
 ---
@@ -110,41 +78,3 @@ COBOL program:
 ---
 {COBOL_SOURCE}
 ---
-
-ARITHMETIC PRECISION (must be obeyed exactly):
-
-COBOL COMPUTE statements keep full intermediate precision and round only
-the final result. Java must do the same.
-
-1. Multiply all numerators together first.
-2. Multiply all denominators together.
-3. Divide EXACTLY ONCE at the end.
-4. The final divide must specify:
-   - scale = number of decimal places in the target PIC clause
-   - RoundingMode = HALF_UP if the COBOL statement has ROUNDED,
-     DOWN if it does not
-
-Example:
-
-COBOL:
-    COMPUTE WS-INTEREST ROUNDED =
-        WS-PRINCIPAL * WS-RATE / 100 * WS-TERM / 12.
-
-Target PIC: 9(7)V99 (2 decimal places, ROUNDED).
-
-Correct Java:
-    BigDecimal numerator   = principal.multiply(rate).multiply(term);
-    BigDecimal denominator = new BigDecimal("1200");
-    BigDecimal interest    = numerator.divide(
-        denominator, 2, RoundingMode.HALF_UP);
-
-Incorrect Java (do NOT do this):
-    principal.multiply(rate).divide(new BigDecimal(100))
-        .multiply(term).divide(new BigDecimal(12), RoundingMode.HALF_UP)
-
-Rules:
-- NEVER chain two divide calls.
-- NEVER call divide without an explicit scale.
-- NEVER rely on the default scale of the dividend.
-- The scale in the final divide must equal the number of V-digits in the
-  target PIC clause (V99 -> scale 2, V999 -> scale 3).

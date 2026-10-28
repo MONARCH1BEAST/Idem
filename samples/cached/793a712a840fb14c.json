@@ -1,0 +1,29 @@
+{
+  "key": "793a712a840fb14c",
+  "prompt_name": "generate",
+  "model": "qwen2.5-coder:7b",
+  "temperature": 0.0,
+  "input_hash": "a326cb064f41d854b1088bef26aef163a8256e9e496293db380b8ff28a1b728d",
+  "created_at": "2026-10-24T09:40:25Z",
+  "raw_response": "{\n  \"java_source\": \"import java.math.BigDecimal;\\nimport java.math.RoundingMode;\\nimport java.util.Locale;\\nimport java.io.BufferedReader;\\nimport java.io.InputStreamReader;\\n\\npublic class Main {\\n    public static void main(String[] args) throws Exception {\\n        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));\\n        System.out.println(\\\"ENTER FIRST NUMBER:\\\");\\n        String input1 = reader.readLine();\\n        System.out.println(\\\"ENTER SECOND NUMBER:\\\");\\n        String input2 = reader.readLine();\\n\\n        BigDecimal num1 = new BigDecimal(input1);\\n        BigDecimal num2 = new BigDecimal(input2);\\n        BigDecimal resultSum = num1.add(num2);\\n\\n        System.out.println(\\\"FIRST NUMBER: \\\" + String.format(Locale.ROOT, \\\"%04d\\\", num1.intValue()));\\n        System.out.println(\\\"SECOND NUMBER: \\\" + String.format(Locale.ROOT, \\\"%04d\\\", num2.intValue()));\\n        System.out.println(\\\"SUM IS: \\\" + String.format(Locale.ROOT, \\\"%08.2f\\\", resultSum.abs()));\\n    }\\n}\",\n  \"test_cases\": [\n    {\n      \"name\": \"Test Case 1\",\n      \"stdin\": \"123\\n456\"\n    },\n    {\n      \"name\": \"Test Case 2\",\n      \"stdin\": \"999\\n1\"\n    },\n    {\n      \"name\": \"Test Case 3\",\n      \"stdin\": \"0\\n0\"\n    }\n  ],\n  \"notes\": [\n    \"The COBOL program prompts the user to enter two numbers, adds them together, and then displays the result.\"\n  ]\n}",
+  "parsed": {
+    "java_source": "import java.math.BigDecimal;\nimport java.math.RoundingMode;\nimport java.util.Locale;\nimport java.io.BufferedReader;\nimport java.io.InputStreamReader;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));\n        System.out.println(\"ENTER FIRST NUMBER:\");\n        String input1 = reader.readLine();\n        System.out.println(\"ENTER SECOND NUMBER:\");\n        String input2 = reader.readLine();\n\n        BigDecimal num1 = new BigDecimal(input1);\n        BigDecimal num2 = new BigDecimal(input2);\n        BigDecimal resultSum = num1.add(num2);\n\n        System.out.println(\"FIRST NUMBER: \" + String.format(Locale.ROOT, \"%04d\", num1.intValue()));\n        System.out.println(\"SECOND NUMBER: \" + String.format(Locale.ROOT, \"%04d\", num2.intValue()));\n        System.out.println(\"SUM IS: \" + String.format(Locale.ROOT, \"%08.2f\", resultSum.abs()));\n    }\n}",
+    "test_cases": [
+      {
+        "name": "Test Case 1",
+        "stdin": "123\n456"
+      },
+      {
+        "name": "Test Case 2",
+        "stdin": "999\n1"
+      },
+      {
+        "name": "Test Case 3",
+        "stdin": "0\n0"
+      }
+    ],
+    "notes": [
+      "The COBOL program prompts the user to enter two numbers, adds them together, and then displays the result."
+    ]
+  }
+}

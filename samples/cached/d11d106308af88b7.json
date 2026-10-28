@@ -1,10 +1,10 @@
 {
-  "key": "f68521ed92884e9b",
+  "key": "d11d106308af88b7",
   "prompt_name": "analyze",
   "model": "qwen2.5-coder:7b",
   "temperature": 0.0,
-  "input_hash": "041f319fdef222c91dc4941adeb2403d38cd5a6a82c36b0ef7a0f10b55e81cb0",
-  "created_at": "2026-10-15T20:21:27Z",
+  "input_hash": "44e4ec58d531b41f1a6e22998409dbfbcc23f0c8a1f4fba5e876735aaae39b35",
+  "created_at": "2026-10-24T09:42:27Z",
   "raw_response": "{\n  \"summary\": \"This COBOL program prompts the user to enter a student's name and marks for three subjects, calculates the total and average marks, and displays the student's name, total marks, average, and pass/fail status.\",\n  \"inputs\": [\"STUDENT-NAME\", \"MARKS-1\", \"MARKS-2\", \"MARKS-3\"],\n  \"outputs\": [\"STUDENT-NAME\", \"TOTAL-MARKS\", \"AVERAGE-MARKS\"],\n  \"business_rules\": [\n    {\n      \"id\": \"R1\",\n      \"description\": \"The program calculates the average marks by dividing the total marks by 3.\",\n      \"cobol_lines\": \"48-50\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"risks\": [\n    \"Implicit rounding at line 50\",\n    \"Implicit rounding at line 52\"\n  ]\n}",
   "parsed": {
     "summary": "This COBOL program prompts the user to enter a student's name and marks for three subjects, calculates the total and average marks, and displays the student's name, total marks, average, and pass/fail status.",

@@ -1,0 +1,29 @@
+{
+  "key": "3145b47f87810df3",
+  "prompt_name": "generate_improved",
+  "model": "qwen2.5-coder:7b",
+  "temperature": 0.0,
+  "input_hash": "bbd0c1714d1841fd276c845b60d92ec3230d97d32b9128b899fb6ce6d1541f4e",
+  "created_at": "2026-10-24T06:08:08Z",
+  "raw_response": "{\n  \"java_source\": \"import java.math.BigDecimal;\\nimport java.math.RoundingMode;\\nimport java.util.Scanner;\\n\\npublic class StudentReport {\\n    public static void main(String[] args) {\\n        Scanner scanner = new Scanner(System.in);\\n        System.out.println(\\\"===== STUDENT REPORT =====\\\");\\n        System.out.print(\\\"Enter student name: \\\");\\n        String studentName = scanner.nextLine();\\n\\n        System.out.print(\\\"Enter marks for Subject 1: \\\");\\n        BigDecimal marks1 = new BigDecimal(scanner.nextLine()).setScale(2, RoundingMode.HALF_UP);\\n\\n        System.out.print(\\\"Enter marks for Subject 2: \\\");\\n        BigDecimal marks2 = new BigDecimal(scanner.nextLine()).setScale(2, RoundingMode.HALF_UP);\\n\\n        System.out.print(\\\"Enter marks for Subject 3: \\\");\\n        BigDecimal marks3 = new BigDecimal(scanner.nextLine()).setScale(2, RoundingMode.HALF_UP);\\n\\n        BigDecimal totalMarks = marks1.add(marks2).add(marks3);\\n        BigDecimal averageMarks = totalMarks.divide(BigDecimal.valueOf(3), 2, RoundingMode.HALF_UP);\\n\\n        System.out.println();\\n        System.out.println(\\\"===== RESULT =====\\\");\\n        System.out.println(\\\"Student: \\\" + studentName);\\n        System.out.println(\\\"Total Marks: \\\" + totalMarks);\\n        System.out.println(\\\"Average: \\\" + averageMarks);\\n\\n        if (averageMarks.compareTo(new BigDecimal(\\\"40\\\")) >= 0) {\\n            System.out.println(\\\"Status: PASS\\\");\\n        } else {\\n            System.out.println(\\\"Status: FAIL\\\");\\n        }\\n    }\\n}\",\n  \"test_cases\": [\n    {\n      \"name\": \"Test Case 1\",\n      \"stdin\": \"John Doe\\n80\\n75\\n90\"\n    },\n    {\n      \"name\": \"Test Case 2\",\n      \"stdin\": \"Jane Smith\\n55\\n60\\n50\"\n    },\n    {\n      \"name\": \"Test Case 3\",\n      \"stdin\": \"Alice Johnson\\n45\\n45\\n45\"\n    }\n  ],\n  \"notes\": [\n    \"CHANGED: Used BigDecimal for all numeric fields. COBOL does not specify rounding mode. Java does specify RoundingMode.HALF_UP. Reason: To ensure consistent and predictable rounding behavior.\"\n  ]\n}",
+  "parsed": {
+    "java_source": "import java.math.BigDecimal;\nimport java.math.RoundingMode;\nimport java.util.Scanner;\n\npublic class StudentReport {\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        System.out.println(\"===== STUDENT REPORT =====\");\n        System.out.print(\"Enter student name: \");\n        String studentName = scanner.nextLine();\n\n        System.out.print(\"Enter marks for Subject 1: \");\n        BigDecimal marks1 = new BigDecimal(scanner.nextLine()).setScale(2, RoundingMode.HALF_UP);\n\n        System.out.print(\"Enter marks for Subject 2: \");\n        BigDecimal marks2 = new BigDecimal(scanner.nextLine()).setScale(2, RoundingMode.HALF_UP);\n\n        System.out.print(\"Enter marks for Subject 3: \");\n        BigDecimal marks3 = new BigDecimal(scanner.nextLine()).setScale(2, RoundingMode.HALF_UP);\n\n        BigDecimal totalMarks = marks1.add(marks2).add(marks3);\n        BigDecimal averageMarks = totalMarks.divide(BigDecimal.valueOf(3), 2, RoundingMode.HALF_UP);\n\n        System.out.println();\n        System.out.println(\"===== RESULT =====\");\n        System.out.println(\"Student: \" + studentName);\n        System.out.println(\"Total Marks: \" + totalMarks);\n        System.out.println(\"Average: \" + averageMarks);\n\n        if (averageMarks.compareTo(new BigDecimal(\"40\")) >= 0) {\n            System.out.println(\"Status: PASS\");\n        } else {\n            System.out.println(\"Status: FAIL\");\n        }\n    }\n}",
+    "test_cases": [
+      {
+        "name": "Test Case 1",
+        "stdin": "John Doe\n80\n75\n90"
+      },
+      {
+        "name": "Test Case 2",
+        "stdin": "Jane Smith\n55\n60\n50"
+      },
+      {
+        "name": "Test Case 3",
+        "stdin": "Alice Johnson\n45\n45\n45"
+      }
+    ],
+    "notes": [
+      "CHANGED: Used BigDecimal for all numeric fields. COBOL does not specify rounding mode. Java does specify RoundingMode.HALF_UP. Reason: To ensure consistent and predictable rounding behavior."
+    ]
+  }
+}

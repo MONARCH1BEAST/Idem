@@ -1,0 +1,12 @@
+{
+  "key": "07e897b10ace71cd",
+  "prompt_name": "diagnose",
+  "model": "qwen2.5-coder:7b",
+  "temperature": 0.0,
+  "input_hash": "4be4a231da55347cdf5865eda1398cce18285d98b938d14f64a5528b7ece4024",
+  "created_at": "2026-10-24T06:03:16Z",
+  "raw_response": "{\n  \"explanation\": \"The Java program uses BigDecimal for calculations, which performs exact arithmetic and rounds using HALF_UP mode, resulting in an average of 95.00. The COBOL program, using PIC 999.99, might have performed integer division or rounding differently, leading to an average of 095.00. This difference in rounding and arithmetic leads to the discrepancy in the 'Status' output.\"\n}",
+  "parsed": {
+    "explanation": "The Java program uses BigDecimal for calculations, which performs exact arithmetic and rounds using HALF_UP mode, resulting in an average of 95.00. The COBOL program, using PIC 999.99, might have performed integer division or rounding differently, leading to an average of 095.00. This difference in rounding and arithmetic leads to the discrepancy in the 'Status' output."
+  }
+}
